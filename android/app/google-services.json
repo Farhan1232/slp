@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "99425340156",
+    "firebase_url": "https://slp-world-5e108-default-rtdb.firebaseio.com",
+    "project_id": "slp-world-5e108",
+    "storage_bucket": "slp-world-5e108.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:99425340156:android:ec948c134de74f22d7a579",
+        "android_client_info": {
+          "package_name": "com.example.slp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBsujEwZPN4FbbC851oWyhnhPzvlsmIsxw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
