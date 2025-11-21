@@ -12,12 +12,73 @@ class AuthController extends GetxController {
   final FirebaseStorage storage = FirebaseStorage.instance;
 
   final RxBool isLoading = false.obs;
-  // Rx variables for password visibility
   final RxBool isPasswordVisible = false.obs;
   final RxBool isConfirmPasswordVisible = false.obs;
   
   final Rx<User?> firebaseUser = Rx<User?>(null);
   final Rx<UserModel?> currentUser = Rx<UserModel?>(null);
+
+  // Dialog translations
+  Map<String, Map<String, String>> get _dialogTranslations => {
+    'en': {
+      // Success messages
+      'success': 'Success',
+      'login_success': 'Login successful!',
+      'signup_success': 'Account created successfully! Please login.',
+      'reset_link_sent': 'Password reset link sent to',
+      'logout_success': 'Logged out successfully',
+      
+      // Error messages
+      'error': 'Error',
+      'unexpected_error': 'An unexpected error occurred',
+      'login_failed': 'Login failed',
+      'signup_failed': 'Account creation failed',
+      'reset_failed': 'Failed to send reset link',
+      'logout_failed': 'Logout failed',
+      
+      // Firebase Auth errors
+      'user_not_found': 'No user found with this email',
+      'wrong_password': 'Incorrect password',
+      'invalid_email': 'Invalid email address',
+      'user_disabled': 'This account has been disabled',
+      'too_many_requests': 'Too many attempts, please try again later',
+      'invalid_credential': 'Invalid login credentials',
+      'weak_password': 'Password is too weak',
+      'email_already_in_use': 'An account already exists with this email',
+      'operation_not_allowed': 'Email/password sign-in is disabled',
+    },
+    'ar': {
+      // Success messages
+      'success': 'تم بنجاح',
+      'login_success': 'تم تسجيل الدخول بنجاح!',
+      'signup_success': 'تم إنشاء الحساب بنجاح! يرجى تسجيل الدخول.',
+      'reset_link_sent': 'تم إرسال رابط استعادة كلمة المرور إلى',
+      'logout_success': 'تم تسجيل الخروج بنجاح',
+      
+      // Error messages
+      'error': 'خطأ',
+      'unexpected_error': 'حدث خطأ غير متوقع',
+      'login_failed': 'فشل تسجيل الدخول',
+      'signup_failed': 'فشل إنشاء الحساب',
+      'reset_failed': 'فشل في إرسال الرابط',
+      'logout_failed': 'فشل تسجيل الخروج',
+      
+      // Firebase Auth errors
+      'user_not_found': 'لا يوجد مستخدم بهذا البريد الإلكتروني',
+      'wrong_password': 'كلمة المرور غير صحيحة',
+      'invalid_email': 'البريد الإلكتروني غير صالح',
+      'user_disabled': 'تم تعطيل هذا الحساب',
+      'too_many_requests': 'عدد محاولات كثيرة، يرجى المحاولة لاحقًا',
+      'invalid_credential': 'بيانات الدخول غير صحيحة',
+      'weak_password': 'كلمة المرور ضعيفة جدًا',
+      'email_already_in_use': 'يوجد حساب مسجل بهذا البريد الإلكتروني',
+      'operation_not_allowed': 'تم تعطيل تسجيل الدخول بالبريد الإلكتروني',
+    },
+  };
+
+  String _getDialogText(String key, String lang) {
+    return _dialogTranslations[lang]?[key] ?? _dialogTranslations['en']![key] ?? key;
+  }
 
   @override
   void onInit() {
@@ -26,7 +87,6 @@ class AuthController extends GetxController {
     ever(firebaseUser, _setInitialScreen);
   }
 
-  // --- Visibility Toggle Methods (FIXED) ---
   void togglePasswordVisibility() {
     isPasswordVisible.value = !isPasswordVisible.value;
   }
@@ -34,28 +94,21 @@ class AuthController extends GetxController {
   void toggleConfirmPasswordVisibility() {
     isConfirmPasswordVisible.value = !isConfirmPasswordVisible.value;
   }
-  // --- END Visibility Toggle Methods ---
 
-
-  // --- Core Navigation/State Setting ---
   _setInitialScreen(User? user) async {
-    // Only proceed if Get is fully initialized
     if (!Get.isRegistered<AuthController>()) return;
 
     if (user == null) {
-      // User is logged out. Send to Login Screen if not already there.
       currentUser.value = null;
       if (Get.currentRoute != '/login') {
          Get.offAllNamed('/login');
       }
     } else {
-      // User is logged in. Fetch data and send to Main Screen.
       UserModel? firestoreUser = await _fetchUserFromFirestore(user.uid);
       
       if (firestoreUser != null) {
         currentUser.value = firestoreUser;
       } else {
-        // Fallback
         currentUser.value = UserModel(
           id: user.uid,
           email: user.email ?? '',
@@ -64,15 +117,11 @@ class AuthController extends GetxController {
         );
       }
       
-      // Navigate to /main if not already there.
       if (Get.currentRoute != '/main' && Get.currentRoute != '/home') {
-          // Use '/home' or '/main' depending on your app's main route
           Get.offAllNamed('/main'); 
       }
     }
   }
-
-  // --- Firebase Storage/Firestore Methods ---
 
   Future<void> _saveUserToFirestore(UserModel user) async {
     try {
@@ -109,9 +158,8 @@ class AuthController extends GetxController {
     }
   }
 
-  // --- Authentication Methods ---
-
-  Future<void> login(String email, String password) async {
+  // Updated login method - accepts language parameter
+  Future<void> login(String email, String password, {String lang = 'en'}) async {
     try {
       isLoading.value = true;
 
@@ -121,7 +169,6 @@ class AuthController extends GetxController {
       );
 
       if (userCredential.user != null) {
-        // Fetch user data from Firestore
         UserModel? firestoreUser = await _fetchUserFromFirestore(userCredential.user!.uid);
 
         if (firestoreUser != null) {
@@ -135,50 +182,41 @@ class AuthController extends GetxController {
           );
         }
 
-        // FIX: Show dialog/snackbar only, then navigate.
         Get.snackbar(
-          'تم بنجاح',
-          'تم تسجيل الدخول بنجاح!',
+          _getDialogText('success', lang),
+          _getDialogText('login_success', lang),
           backgroundColor: Colors.green,
           colorText: Colors.white,
           snackPosition: SnackPosition.TOP,
           duration: const Duration(seconds: 2),
         );
-        
-        // Navigation to /main will be handled by _setInitialScreen 
-        // which listens to authStateChanges. 
-        // We can add a slight delay to ensure the snackbar is shown 
-        // before navigation is triggered by the auth change listener.
-        // The listener is the most reliable way to handle navigation after login.
       }
     } on FirebaseAuthException catch (e) {
-      String errorMessage = 'حدث خطأ ما';
+      String errorKey = 'login_failed';
       switch (e.code) {
         case 'user-not-found':
-          errorMessage = 'لا يوجد مستخدم بهذا البريد الإلكتروني';
+          errorKey = 'user_not_found';
           break;
         case 'wrong-password':
-          errorMessage = 'كلمة المرور غير صحيحة';
+          errorKey = 'wrong_password';
           break;
         case 'invalid-email':
-          errorMessage = 'البريد الإلكتروني غير صالح';
+          errorKey = 'invalid_email';
           break;
         case 'user-disabled':
-          errorMessage = 'تم تعطيل هذا الحساب';
+          errorKey = 'user_disabled';
           break;
         case 'too-many-requests':
-          errorMessage = 'عدد محاولات كثيرة، يرجى المحاولة لاحقًا';
+          errorKey = 'too_many_requests';
           break;
         case 'invalid-credential':
-          errorMessage = 'بيانات الدخول غير صحيحة';
+          errorKey = 'invalid_credential';
           break;
-        default:
-          errorMessage = e.message ?? 'فشل تسجيل الدخول';
       }
 
       Get.snackbar(
-        'خطأ',
-        errorMessage,
+        _getDialogText('error', lang),
+        _getDialogText(errorKey, lang),
         backgroundColor: Colors.red,
         colorText: Colors.white,
         snackPosition: SnackPosition.TOP,
@@ -186,8 +224,8 @@ class AuthController extends GetxController {
       );
     } catch (e) {
       Get.snackbar(
-        'خطأ',
-        'حدث خطأ غير متوقع',
+        _getDialogText('error', lang),
+        _getDialogText('unexpected_error', lang),
         backgroundColor: Colors.red,
         colorText: Colors.white,
         snackPosition: SnackPosition.TOP,
@@ -197,12 +235,12 @@ class AuthController extends GetxController {
     }
   }
 
-  Future<void> signup(String email, String password, String name, {File? profileImage}) async {
+  // Updated signup method - accepts language parameter
+  Future<void> signup(String email, String password, String name, {File? profileImage, String lang = 'en'}) async {
     try {
       isLoading.value = true;
       String? photoUrl;
 
-      // 1. Create user in Firebase Auth
       UserCredential userCredential = await auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
@@ -213,12 +251,10 @@ class AuthController extends GetxController {
       if (newUser != null) {
         String uid = newUser.uid;
         
-        // 2. Upload image to Firebase Storage if provided
         if (profileImage != null) {
           photoUrl = await _uploadProfileImage(uid, profileImage);
         }
         
-        // 3. Update Firebase Auth profile
         await newUser.updateDisplayName(name);
         if (photoUrl != null) {
           await newUser.updatePhotoURL(photoUrl);
@@ -227,7 +263,6 @@ class AuthController extends GetxController {
 
         User? updatedUser = auth.currentUser;
 
-        // 4. Create UserModel and save to Firestore
         UserModel newUserModel = UserModel(
           id: updatedUser!.uid,
           email: updatedUser.email ?? '',
@@ -236,46 +271,40 @@ class AuthController extends GetxController {
         );
         
         await _saveUserToFirestore(newUserModel);
-        
-        // FIX: Sign out the user immediately after account creation 
-        // to force them to the login screen as requested.
         await auth.signOut();
 
         Get.snackbar(
-          'تم بنجاح',
-          'تم إنشاء الحساب بنجاح! يرجى تسجيل الدخول.',
+          _getDialogText('success', lang),
+          _getDialogText('signup_success', lang),
           backgroundColor: Colors.green,
           colorText: Colors.white,
           snackPosition: SnackPosition.TOP,
           duration: const Duration(seconds: 3),
         );
 
-        // FIX: Explicitly navigate to Login screen after successful signup and sign out.
         Get.offAllNamed('/login');
       }
     } on FirebaseAuthException catch (e) {
-      String errorMessage = 'حدث خطأ ما';
+      String errorKey = 'signup_failed';
 
       switch (e.code) {
         case 'weak-password':
-          errorMessage = 'كلمة المرور ضعيفة جدًا';
+          errorKey = 'weak_password';
           break;
         case 'email-already-in-use':
-          errorMessage = 'يوجد حساب مسجل بهذا البريد الإلكتروني';
+          errorKey = 'email_already_in_use';
           break;
         case 'invalid-email':
-          errorMessage = 'البريد الإلكتروني غير صالح';
+          errorKey = 'invalid_email';
           break;
         case 'operation-not-allowed':
-          errorMessage = 'تم تعطيل تسجيل الدخول بالبريد الإلكتروني';
+          errorKey = 'operation_not_allowed';
           break;
-        default:
-          errorMessage = e.message ?? 'فشل إنشاء الحساب';
       }
 
       Get.snackbar(
-        'خطأ',
-        errorMessage,
+        _getDialogText('error', lang),
+        _getDialogText(errorKey, lang),
         backgroundColor: Colors.red,
         colorText: Colors.white,
         snackPosition: SnackPosition.TOP,
@@ -283,8 +312,8 @@ class AuthController extends GetxController {
       );
     } catch (e) {
       Get.snackbar(
-        'خطأ',
-        'حدث خطأ غير متوقع',
+        _getDialogText('error', lang),
+        _getDialogText('unexpected_error', lang),
         backgroundColor: Colors.red,
         colorText: Colors.white,
         snackPosition: SnackPosition.TOP,
@@ -294,15 +323,16 @@ class AuthController extends GetxController {
     }
   }
 
-  Future<void> resetPassword(String email) async {
+  // Updated resetPassword method - accepts language parameter
+  Future<void> resetPassword(String email, {String lang = 'en'}) async {
     try {
       isLoading.value = true;
 
       await auth.sendPasswordResetEmail(email: email);
 
       Get.snackbar(
-        'تم بنجاح',
-        'تم إرسال رابط استعادة كلمة المرور إلى $email',
+        _getDialogText('success', lang),
+        '${_getDialogText('reset_link_sent', lang)} $email',
         backgroundColor: Colors.green,
         colorText: Colors.white,
         snackPosition: SnackPosition.TOP,
@@ -311,22 +341,20 @@ class AuthController extends GetxController {
 
       Get.back();
     } on FirebaseAuthException catch (e) {
-      String errorMessage = 'حدث خطأ ما';
+      String errorKey = 'reset_failed';
 
       switch (e.code) {
         case 'user-not-found':
-          errorMessage = 'لا يوجد مستخدم بهذا البريد الإلكتروني';
+          errorKey = 'user_not_found';
           break;
         case 'invalid-email':
-          errorMessage = 'البريد الإلكتروني غير صالح';
+          errorKey = 'invalid_email';
           break;
-        default:
-          errorMessage = e.message ?? 'فشل في إرسال الرابط';
       }
 
       Get.snackbar(
-        'خطأ',
-        errorMessage,
+        _getDialogText('error', lang),
+        _getDialogText(errorKey, lang),
         backgroundColor: Colors.red,
         colorText: Colors.white,
         snackPosition: SnackPosition.TOP,
@@ -334,8 +362,8 @@ class AuthController extends GetxController {
       );
     } catch (e) {
       Get.snackbar(
-        'خطأ',
-        'حدث خطأ غير متوقع',
+        _getDialogText('error', lang),
+        _getDialogText('unexpected_error', lang),
         backgroundColor: Colors.red,
         colorText: Colors.white,
         snackPosition: SnackPosition.TOP,
@@ -345,15 +373,15 @@ class AuthController extends GetxController {
     }
   }
 
-  Future<void> logout() async {
+  Future<void> logout({String lang = 'en'}) async {
     try {
       await auth.signOut();
       currentUser.value = null;
       Get.offAllNamed('/login');
 
       Get.snackbar(
-        'تم بنجاح',
-        'تم تسجيل الخروج بنجاح',
+        _getDialogText('success', lang),
+        _getDialogText('logout_success', lang),
         backgroundColor: Colors.green,
         colorText: Colors.white,
         snackPosition: SnackPosition.TOP,
@@ -361,8 +389,8 @@ class AuthController extends GetxController {
       );
     } catch (e) {
       Get.snackbar(
-        'خطأ',
-        'فشل تسجيل الخروج',
+        _getDialogText('error', lang),
+        _getDialogText('logout_failed', lang),
         backgroundColor: Colors.red,
         colorText: Colors.white,
         snackPosition: SnackPosition.TOP,
@@ -380,60 +408,41 @@ class AuthController extends GetxController {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
 class LanguageController extends GetxController {
-  // Separate observable for each screen
   final RxString loginScreenLanguage = 'en'.obs;
   final RxString signupScreenLanguage = 'en'.obs;
   final RxString forgotPasswordScreenLanguage = 'en'.obs;
-  final RxString mainAppLanguage = 'en'.obs; // For Home, Profile, Bottom Nav
+  final RxString mainAppLanguage = 'en'.obs;
 
-  // Change language for Login screen only
   void changeLoginLanguage(String languageCode) {
     loginScreenLanguage.value = languageCode;
-    update(['login_screen']); // Update only login screen
+    update(['login_screen']);
   }
 
-  // Change language for Signup screen only
   void changeSignupLanguage(String languageCode) {
     signupScreenLanguage.value = languageCode;
-    update(['signup_screen']); // Update only signup screen
+    update(['signup_screen']);
   }
 
-  // Change language for Forgot Password screen only
   void changeForgotPasswordLanguage(String languageCode) {
     forgotPasswordScreenLanguage.value = languageCode;
-    update(['forgot_password_screen']); // Update only forgot password screen
+    update(['forgot_password_screen']);
   }
 
-  // Change language for main app (Home, Profile, Bottom Nav)
   void changeMainAppLanguage(String languageCode) {
     mainAppLanguage.value = languageCode;
-    update(['main_app']); // Update main app screens
+    update(['main_app']);
   }
 
-  // Get translated text for specific screen
   String getTranslation(String key, String screenLanguage) {
     final translations = _getTranslations();
     return translations[screenLanguage]?[key] ?? key;
   }
 
-  // Get translation for main app (Home, Profile, Bottom Nav)
   String getMainAppTranslation(String key) {
     return getTranslation(key, mainAppLanguage.value);
   }
 
-  // All translations in one place
   Map<String, Map<String, String>> _getTranslations() {
     return {
       'en': {
@@ -452,8 +461,6 @@ class LanguageController extends GetxController {
         'login': 'Login',
         'no_account': 'Don\'t have an account? ',
         'create_account': 'Create Account',
-        
-        // Signup
         'join_us': 'Join Us!',
         'create_account_header': 'Create Account',
         'register_to_start': 'Register to start learning',
@@ -466,15 +473,11 @@ class LanguageController extends GetxController {
         'passwords_do_not_match': 'Passwords do not match',
         'register': 'Register',
         'have_account': 'Already have an account? ',
-        
-        // Forgot Password
         'need_help': 'Need Help?',
         'forgot_password_header': 'Forgot Password?',
         'reset_password_instruction': 'Enter your email and we\'ll send you a reset link',
         'send_reset_link': 'Send Reset Link',
         'back_to_login': 'Back to Login',
-        
-        // Home Screen
         'welcome': 'Welcome',
         'language': 'Language',
         'home_exercises': 'Home Exercises',
@@ -484,13 +487,9 @@ class LanguageController extends GetxController {
         'free_pdf_materials': 'Free PDF Materials',
         'quiz': 'Quiz',
         'app_questions': 'App Questions',
-        
-        // Bottom Navigation
         'home_tab': 'Home',
         'result_tab': 'Results',
-        'profile_tab': 'Profile',
-        
-        // Profile Screen
+        'setting': 'Setting',
         'profile_title': 'Profile',
         'default_user': 'User',
         'terms_and_conditions': 'Terms and Conditions',
@@ -527,8 +526,6 @@ class LanguageController extends GetxController {
         'login': 'تسجيل الدخول',
         'no_account': 'ليس لديك حساب؟ ',
         'create_account': 'إنشاء حساب',
-        
-        // Signup
         'join_us': 'انضم إلينا!',
         'create_account_header': 'إنشاء حساب',
         'register_to_start': 'سجل لبدء التعلم',
@@ -541,15 +538,11 @@ class LanguageController extends GetxController {
         'passwords_do_not_match': 'كلمات المرور غير متطابقة',
         'register': 'تسجيل',
         'have_account': 'هل لديك حساب بالفعل؟ ',
-        
-        // Forgot Password
         'need_help': 'تحتاج مساعدة؟',
         'forgot_password_header': 'هل نسيت كلمة المرور؟',
         'reset_password_instruction': 'أدخل بريدك الإلكتروني وسنرسل لك رابط إعادة التعيين',
         'send_reset_link': 'إرسال رابط إعادة التعيين',
         'back_to_login': 'العودة لتسجيل الدخول',
-        
-        // Home Screen
         'welcome': 'مرحبا',
         'language': 'اللغة',
         'home_exercises': 'تمارين منزلية',
@@ -559,13 +552,9 @@ class LanguageController extends GetxController {
         'free_pdf_materials': 'مواد PDF مجانية',
         'quiz': 'اختبار',
         'app_questions': 'أسئلة التطبيق',
-        
-        // Bottom Navigation
         'home_tab': 'الرئيسية',
         'result_tab': 'النتائج',
-        'profile_tab': 'الملف الشخصي',
-        
-        // Profile Screen
+        'setting': 'الإعدادات',
         'profile_title': 'الملف الشخصي',
         'default_user': 'مستخدم',
         'terms_and_conditions': 'الشروط والأحكام',

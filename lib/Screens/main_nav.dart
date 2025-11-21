@@ -53,8 +53,8 @@ class MainScreen extends StatelessWidget {
             ),
             BottomNavigationBarItem(
               icon: const Icon(Icons.person_outline),
-              activeIcon: const Icon(Icons.person),
-              label: tr('profile_tab'),
+              activeIcon: const Icon(Icons.settings),
+              label: tr('setting'),
             ),
           ],
         ),

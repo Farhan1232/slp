@@ -76,45 +76,45 @@ class LoginScreen extends StatelessWidget {
   Widget _buildTopSection() {
     return Column(
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Container(
-              width: 60.w,
-              height: 60.h,
-              decoration: BoxDecoration(
-                color: const Color(0xFF5D9C99),
-                borderRadius: BorderRadius.circular(30.r),
-                border: Border.all(
-                  color: const Color(0xFF082726),
-                  width: 2.w,
-                ),
-              ),
-              child: Icon(
-                Icons.face,
-                color: Colors.white,
-                size: 30.sp,
-              ),
-            ),
-            Container(
-              width: 80.w,
-              height: 80.h,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8B134),
-                borderRadius: BorderRadius.circular(40.r),
-                border: Border.all(
-                  color: const Color(0xFF082726),
-                  width: 2.w,
-                ),
-              ),
-              child: Icon(
-                Icons.face,
-                color: const Color(0xFF082726),
-                size: 40.sp,
-              ),
-            ),
-          ],
-        ),
+        // Row(
+        //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        //   children: [
+        //     Container(
+        //       width: 60.w,
+        //       height: 60.h,
+        //       decoration: BoxDecoration(
+        //         color: const Color(0xFF5D9C99),
+        //         borderRadius: BorderRadius.circular(30.r),
+        //         border: Border.all(
+        //           color: const Color(0xFF082726),
+        //           width: 2.w,
+        //         ),
+        //       ),
+        //       child: Icon(
+        //         Icons.face,
+        //         color: Colors.white,
+        //         size: 30.sp,
+        //       ),
+        //     ),
+        //     Container(
+        //       width: 80.w,
+        //       height: 80.h,
+        //       decoration: BoxDecoration(
+        //         color: const Color(0xFFF8B134),
+        //         borderRadius: BorderRadius.circular(40.r),
+        //         border: Border.all(
+        //           color: const Color(0xFF082726),
+        //           width: 2.w,
+        //         ),
+        //       ),
+        //       child: Icon(
+        //         Icons.face,
+        //         color: const Color(0xFF082726),
+        //         size: 40.sp,
+        //       ),
+        //     ),
+        //   ],
+        // ),
         SizedBox(height: 20.h),
         Container(
           width: 120.w,
@@ -262,32 +262,33 @@ class LoginScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLoginButton() {
-    return Obx(() => Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15.r),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF37817D).withOpacity(0.3),
-                blurRadius: 10.r,
-                offset: Offset(0, 4.h),
-              ),
-            ],
-          ),
-          child: CustomButton(
-            text: tr('login'),
-            onPressed: () {
-              if (formKey.currentState!.validate()) {
-                authController.login(
-                  emailController.text.trim(),
-                  passwordController.text.trim(),
-                );
-              }
-            },
-            isLoading: authController.isLoading.value,
-          ),
-        ));
-  }
+Widget _buildLoginButton() {
+  return Obx(() => Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(15.r),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF37817D).withOpacity(0.3),
+              blurRadius: 10.r,
+              offset: Offset(0, 4.h),
+            ),
+          ],
+        ),
+        child: CustomButton(
+          text: tr('login'),
+          onPressed: () {
+            if (formKey.currentState!.validate()) {
+              authController.login(
+                emailController.text.trim(),
+                passwordController.text.trim(),
+                lang: languageController.loginScreenLanguage.value, // ADD THIS
+              );
+            }
+          },
+          isLoading: authController.isLoading.value,
+        ),
+      ));
+}
 
   Widget _buildSignUpSection() {
     return Row(

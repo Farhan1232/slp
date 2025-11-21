@@ -176,48 +176,48 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
             )),
-        Positioned(
-          top: 10.h,
-          left: 30.w,
-          child: Container(
-            width: 50.w,
-            height: 50.h,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8B134),
-              borderRadius: BorderRadius.circular(25.r),
-              border: Border.all(
-                color: const Color(0xFF082726),
-                width: 2.w,
-              ),
-            ),
-            child: Icon(
-              Icons.face,
-              color: const Color(0xFF082726),
-              size: 25.sp,
-            ),
-          ),
-        ),
-        Positioned(
-          bottom: 10.h,
-          right: 30.w,
-          child: Container(
-            width: 40.w,
-            height: 40.h,
-            decoration: BoxDecoration(
-              color: const Color(0xFF5D9C99),
-              borderRadius: BorderRadius.circular(20.r),
-              border: Border.all(
-                color: const Color(0xFF082726),
-                width: 2.w,
-              ),
-            ),
-            child: Icon(
-              Icons.face,
-              color: Colors.white,
-              size: 20.sp,
-            ),
-          ),
-        ),
+        // Positioned(
+        //   top: 10.h,
+        //   left: 30.w,
+        //   child: Container(
+        //     width: 50.w,
+        //     height: 50.h,
+        //     decoration: BoxDecoration(
+        //       color: const Color(0xFFF8B134),
+        //       borderRadius: BorderRadius.circular(25.r),
+        //       border: Border.all(
+        //         color: const Color(0xFF082726),
+        //         width: 2.w,
+        //       ),
+        //     ),
+        //     child: Icon(
+        //       Icons.face,
+        //       color: const Color(0xFF082726),
+        //       size: 25.sp,
+        //     ),
+        //   ),
+        // ),
+        // Positioned(
+        //   bottom: 10.h,
+        //   right: 30.w,
+        //   child: Container(
+        //     width: 40.w,
+        //     height: 40.h,
+        //     decoration: BoxDecoration(
+        //       color: const Color(0xFF5D9C99),
+        //       borderRadius: BorderRadius.circular(20.r),
+        //       border: Border.all(
+        //         color: const Color(0xFF082726),
+        //         width: 2.w,
+        //       ),
+        //     ),
+        //     child: Icon(
+        //       Icons.face,
+        //       color: Colors.white,
+        //       size: 20.sp,
+        //     ),
+        //   ),
+        // ),
       ],
     );
   }

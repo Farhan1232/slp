@@ -372,34 +372,35 @@ class SignupScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSignUpButton() {
-    return Obx(() => Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15.r),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF37817D).withOpacity(0.3),
-                blurRadius: 10.r,
-                offset: Offset(0, 4.h),
-              ),
-            ],
-          ),
-          child: CustomButton(
-            text: tr('register'),
-            onPressed: () {
-              if (formKey.currentState!.validate()) {
-                authController.signup(
-                  emailController.text.trim(),
-                  passwordController.text.trim(),
-                  nameController.text.trim(),
-                  profileImage: pickedImage.value,
-                );
-              }
-            },
-            isLoading: authController.isLoading.value,
-          ),
-        ));
-  }
+Widget _buildSignUpButton() {
+  return Obx(() => Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(15.r),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF37817D).withOpacity(0.3),
+              blurRadius: 10.r,
+              offset: Offset(0, 4.h),
+            ),
+          ],
+        ),
+        child: CustomButton(
+          text: tr('register'),
+          onPressed: () {
+            if (formKey.currentState!.validate()) {
+              authController.signup(
+                emailController.text.trim(),
+                passwordController.text.trim(),
+                nameController.text.trim(),
+                profileImage: pickedImage.value,
+                lang: languageController.signupScreenLanguage.value, // ADD THIS
+              );
+            }
+          },
+          isLoading: authController.isLoading.value,
+        ),
+      ));
+}
 
   Widget _buildLoginSection() {
     return Row(

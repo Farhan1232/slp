@@ -218,31 +218,32 @@ class ForgetPasswordScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildResetButton() {
-    return Obx(() => Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15.r),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF37817D).withOpacity(0.3),
-                blurRadius: 10.r,
-                offset: Offset(0, 4.h),
-              ),
-            ],
-          ),
-          child: CustomButton(
-            text: tr('send_reset_link'),
-            onPressed: () {
-              if (formKey.currentState!.validate()) {
-                authController.resetPassword(
-                  emailController.text.trim(),
-                );
-              }
-            },
-            isLoading: authController.isLoading.value,
-          ),
-        ));
-  }
+ Widget _buildResetButton() {
+  return Obx(() => Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(15.r),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF37817D).withOpacity(0.3),
+              blurRadius: 10.r,
+              offset: Offset(0, 4.h),
+            ),
+          ],
+        ),
+        child: CustomButton(
+          text: tr('send_reset_link'),
+          onPressed: () {
+            if (formKey.currentState!.validate()) {
+              authController.resetPassword(
+                emailController.text.trim(),
+                lang: languageController.forgotPasswordScreenLanguage.value, // ADD THIS
+              );
+            }
+          },
+          isLoading: authController.isLoading.value,
+        ),
+      ));
+}
 
   Widget _buildBackToLogin() {
     return Center(

@@ -108,7 +108,7 @@ class _SplashScreenState extends State<SplashScreen> {
           ),
         ),
         SizedBox(height: 30.h),
-        Text('تطبيق النطق واللغة', style: TextStyle(fontSize: 28.sp, fontWeight: FontWeight.bold, color: const Color(0xFF082726))),
+        Text('تطبيق عالم النطق واللغة', style: TextStyle(fontSize: 28.sp, fontWeight: FontWeight.bold, color: const Color(0xFF082726))),
         SizedBox(height: 8.h),
         Text('دعم وتطوير مهارات التواصل', style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w500, color: const Color(0xFF37817D))),
         SizedBox(height: 20.h),
