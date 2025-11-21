@@ -1,20 +1,41 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:slp/Screens/screen_widget_button.dart';
 import 'package:slp/controller/auth_controller.dart';
 import 'package:slp/widget/button_widget.dart';
 import 'package:slp/widget/textfield.dart';
 
+
 class SignupScreen extends StatelessWidget {
   final AuthController authController = Get.find<AuthController>();
+  final LanguageController languageController = Get.find<LanguageController>();
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController = TextEditingController();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+  final Rx<File?> pickedImage = Rx<File?>(null);
 
   SignupScreen({Key? key}) : super(key: key);
+
+  String tr(String key) {
+    return languageController.getTranslation(
+      key,
+      languageController.signupScreenLanguage.value,
+    );
+  }
+
+  Future<void> _pickImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+
+    if (image != null) {
+      pickedImage.value = File(image.path);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +50,8 @@ class SignupScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, 
+          icon: Icon(
+            Icons.arrow_back,
             color: const Color(0xFF082726),
             size: 24.sp,
           ),
@@ -44,22 +66,73 @@ class SignupScreen extends StatelessWidget {
           ),
           child: Form(
             key: formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildTopSection(),
-                SizedBox(height: 30.h),
-                _buildWelcomeText(),
-                SizedBox(height: 40.h),
-                _buildFormFields(),
-                SizedBox(height: 40.h),
-                _buildSignUpButton(),
-                SizedBox(height: 30.h),
-                _buildLoginSection(),
-              ],
-            ),
+            child: Obx(() {
+              // Force rebuild when language changes
+              final _ = languageController.signupScreenLanguage.value;
+              
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: ScreenLanguageButton(
+                      currentLanguage: languageController.signupScreenLanguage.value,
+                      onLanguageChange: (lang) {
+                        languageController.changeSignupLanguage(lang);
+                      },
+                    ),
+                  ),
+                  SizedBox(height: 10.h),
+                  _buildTopSection(),
+                  SizedBox(height: 30.h),
+                  _buildWelcomeText(),
+                  SizedBox(height: 20.h),
+                  _buildProfilePicturePicker(),
+                  SizedBox(height: 20.h),
+                  _buildFormFields(),
+                  SizedBox(height: 40.h),
+                  _buildSignUpButton(),
+                  SizedBox(height: 30.h),
+                  _buildLoginSection(),
+                ],
+              );
+            }),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildProfilePicturePicker() {
+    return Center(
+      child: GestureDetector(
+        onTap: _pickImage,
+        child: Obx(() => Container(
+              width: 100.w,
+              height: 100.h,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFF5D9C99).withOpacity(0.1),
+                border: Border.all(
+                  color: const Color(0xFF5D9C99),
+                  width: 3.w,
+                ),
+              ),
+              child: pickedImage.value != null
+                  ? ClipOval(
+                      child: Image.file(
+                        pickedImage.value!,
+                        width: 100.w,
+                        height: 100.h,
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  : Icon(
+                      Icons.camera_alt,
+                      color: const Color(0xFF37817D),
+                      size: 40.sp,
+                    ),
+            )),
       ),
     );
   }
@@ -124,7 +197,7 @@ class SignupScreen extends StatelessWidget {
           ),
           child: Center(
             child: Text(
-              'انضم إلينا!',
+              tr('join_us'),
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 16.sp,
@@ -142,7 +215,7 @@ class SignupScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'إنشاء حساب',
+          tr('create_account_header'),
           style: TextStyle(
             fontSize: 32.sp,
             fontWeight: FontWeight.bold,
@@ -152,7 +225,7 @@ class SignupScreen extends StatelessWidget {
         ),
         SizedBox(height: 8.h),
         Text(
-          'سجل للبدء',
+          tr('register_to_start'),
           style: TextStyle(
             fontSize: 16.sp,
             color: const Color(0xFF37817D),
@@ -179,12 +252,12 @@ class SignupScreen extends StatelessWidget {
           ),
           child: CustomTextField(
             controller: nameController,
-            hintText: 'أدخل اسمك',
-            labelText: 'الاسم الكامل',
+            hintText: tr('enter_your_name'),
+            labelText: tr('full_name'),
             prefixIcon: Icons.person_outline,
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return 'الرجاء إدخال الاسم';
+                return tr('name_required');
               }
               return null;
             },
@@ -204,16 +277,16 @@ class SignupScreen extends StatelessWidget {
           ),
           child: CustomTextField(
             controller: emailController,
-            hintText: 'أدخل بريدك الإلكتروني',
-            labelText: 'البريد الإلكتروني',
+            hintText: tr('enter_your_email'),
+            labelText: tr('email'),
             prefixIcon: Icons.email_outlined,
             keyboardType: TextInputType.emailAddress,
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return 'الرجاء إدخال البريد الإلكتروني';
+                return tr('email_required');
               }
               if (!GetUtils.isEmail(value)) {
-                return 'الرجاء إدخال بريد إلكتروني صالح';
+                return tr('valid_email_required');
               }
               return null;
             },
@@ -233,8 +306,8 @@ class SignupScreen extends StatelessWidget {
           ),
           child: Obx(() => CustomTextField(
                 controller: passwordController,
-                hintText: 'أدخل كلمة المرور',
-                labelText: 'كلمة المرور',
+                hintText: tr('enter_password'),
+                labelText: tr('password'),
                 prefixIcon: Icons.lock_outline,
                 obscureText: !authController.isPasswordVisible.value,
                 suffixIcon: IconButton(
@@ -248,10 +321,10 @@ class SignupScreen extends StatelessWidget {
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'الرجاء إدخال كلمة المرور';
+                    return tr('password_required');
                   }
                   if (value.length < 6) {
-                    return 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
+                    return tr('password_min_length');
                   }
                   return null;
                 },
@@ -271,8 +344,8 @@ class SignupScreen extends StatelessWidget {
           ),
           child: Obx(() => CustomTextField(
                 controller: confirmPasswordController,
-                hintText: 'أكد كلمة المرور',
-                labelText: 'تأكيد كلمة المرور',
+                hintText: tr('confirm_password_hint'),
+                labelText: tr('confirm_password'),
                 prefixIcon: Icons.lock_outline,
                 obscureText: !authController.isConfirmPasswordVisible.value,
                 suffixIcon: IconButton(
@@ -286,10 +359,10 @@ class SignupScreen extends StatelessWidget {
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'الرجاء تأكيد كلمة المرور';
+                    return tr('confirm_password_required');
                   }
                   if (value != passwordController.text) {
-                    return 'كلمات المرور غير متطابقة';
+                    return tr('passwords_do_not_match');
                   }
                   return null;
                 },
@@ -312,13 +385,14 @@ class SignupScreen extends StatelessWidget {
             ],
           ),
           child: CustomButton(
-            text: 'تسجيل',
+            text: tr('register'),
             onPressed: () {
               if (formKey.currentState!.validate()) {
                 authController.signup(
                   emailController.text.trim(),
                   passwordController.text.trim(),
                   nameController.text.trim(),
+                  profileImage: pickedImage.value,
                 );
               }
             },
@@ -332,7 +406,7 @@ class SignupScreen extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
-          'هل لديك حساب بالفعل؟ ',
+          tr('have_account'),
           style: TextStyle(
             color: const Color(0xFF37817D),
             fontSize: 14.sp,
@@ -352,7 +426,7 @@ class SignupScreen extends StatelessWidget {
               Get.back();
             },
             child: Text(
-              'تسجيل الدخول',
+              tr('login'),
               style: TextStyle(
                 color: const Color(0xFF082726),
                 fontWeight: FontWeight.bold,

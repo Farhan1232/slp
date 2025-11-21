@@ -1,5 +1,3 @@
-// profile_screen.dart
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -7,33 +5,41 @@ import 'package:slp/Screens/profile_menu.dart';
 import 'package:slp/controller/auth_controller.dart';
 import 'package:slp/controller/profile_controller.dart';
 
+
 class ProfileScreen extends StatelessWidget {
   final AuthController authController = Get.find<AuthController>();
   final ProfileController profileController = Get.put(ProfileController());
+  final LanguageController languageController = Get.find<LanguageController>();
 
   ProfileScreen({Key? key}) : super(key: key);
 
+  String tr(String key) {
+    return languageController.getMainAppTranslation(key);
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Initialize ScreenUtil for responsiveness
     ScreenUtil.init(
       context,
-      designSize: const Size(360, 800), // Standard mobile design size
+      designSize: const Size(360, 800),
     );
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFEFEFE), // White background
+      backgroundColor: const Color(0xFFFEFEFE),
       appBar: AppBar(
-        title: Text(
-          'الملف الشخصي',
-          style: TextStyle(
-            fontSize: 20.sp,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
+        title: Obx(() {
+          final _ = languageController.mainAppLanguage.value;
+          return Text(
+            tr('profile_title'),
+            style: TextStyle(
+              fontSize: 20.sp,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          );
+        }),
         centerTitle: true,
-        backgroundColor: const Color(0xFF5D9C99), // Teal Green
+        backgroundColor: const Color(0xFF5D9C99),
         foregroundColor: Colors.white,
         elevation: 0,
         shape: RoundedRectangleBorder(
@@ -45,19 +51,19 @@ class ProfileScreen extends StatelessWidget {
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-        child: Column(
-          children: [
-            SizedBox(height: 30.h),
-
-            // Profile Header Section
-            _buildProfileHeader(),
-            SizedBox(height: 30.h),
-
-            // Menu Items Section
-            _buildMenuItems(),
-            SizedBox(height: 20.h),
-          ],
-        ),
+        child: Obx(() {
+          final _ = languageController.mainAppLanguage.value;
+          
+          return Column(
+            children: [
+              SizedBox(height: 30.h),
+              _buildProfileHeader(),
+              SizedBox(height: 30.h),
+              _buildMenuItems(),
+              SizedBox(height: 20.h),
+            ],
+          );
+        }),
       ),
     );
   }
@@ -70,8 +76,8 @@ class ProfileScreen extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFF5D9C99).withOpacity(0.1), // Teal Green light
-            const Color(0xFFF8B134).withOpacity(0.05), // Mustard Yellow light
+            const Color(0xFF5D9C99).withOpacity(0.1),
+            const Color(0xFFF8B134).withOpacity(0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(20.r),
@@ -91,7 +97,13 @@ class ProfileScreen extends StatelessWidget {
         children: [
           // Profile Image
           Obx(() {
-            final localImage = profileController.localImagePath.value;
+            final profileImageUrl = profileController.profileImageUrl.value;
+            
+            ImageProvider? imageProvider;
+            if (profileImageUrl != null) {
+              imageProvider = NetworkImage(profileImageUrl);
+            }
+
             return GestureDetector(
               onTap: () {
                 profileController.pickImageFromGallery();
@@ -100,17 +112,13 @@ class ProfileScreen extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 60.r,
-                    backgroundColor: const Color(
-                      0xFF5D9C99,
-                    ).withOpacity(0.2), // Teal Green light
-                    backgroundImage: localImage != null
-                        ? FileImage(File(localImage))
-                        : null,
-                    child: localImage == null
+                    backgroundColor: const Color(0xFF5D9C99).withOpacity(0.2),
+                    backgroundImage: imageProvider,
+                    child: profileImageUrl == null
                         ? Icon(
                             Icons.person,
                             size: 50.sp,
-                            color: const Color(0xFF5D9C99), // Teal Green
+                            color: const Color(0xFF5D9C99),
                           )
                         : null,
                   ),
@@ -120,7 +128,7 @@ class ProfileScreen extends StatelessWidget {
                     child: Container(
                       padding: EdgeInsets.all(8.w),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF8B134), // Mustard Yellow
+                        color: const Color(0xFFF8B134),
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white, width: 2.w),
                         boxShadow: [
@@ -134,10 +142,22 @@ class ProfileScreen extends StatelessWidget {
                       child: Icon(
                         Icons.camera_alt,
                         size: 18.sp,
-                        color: const Color(0xFF082726), // Dark Border
+                        color: const Color(0xFF082726),
                       ),
                     ),
                   ),
+                  if (profileController.isLoading.value)
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.black54,
+                        ),
+                        child: Center(
+                          child: CircularProgressIndicator(color: Colors.white),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             );
@@ -147,11 +167,11 @@ class ProfileScreen extends StatelessWidget {
           // User Name
           Obx(
             () => Text(
-              authController.currentUser.value?.name ?? 'مستخدم',
+              authController.currentUser.value?.name ?? tr('default_user'),
               style: TextStyle(
                 fontSize: 24.sp,
                 fontWeight: FontWeight.bold,
-                color: const Color(0xFF082726), // Dark Border
+                color: const Color(0xFF082726),
               ),
             ),
           ),
@@ -160,10 +180,10 @@ class ProfileScreen extends StatelessWidget {
           // User Email
           Obx(
             () => Text(
-              authController.currentUser.value?.email ?? '',
+              authController.currentUser.value?.email ?? 'N/A',
               style: TextStyle(
                 fontSize: 16.sp,
-                color: const Color(0xFF37817D), // Darker Teal
+                color: const Color(0xFF37817D),
               ),
             ),
           ),
@@ -185,8 +205,8 @@ class ProfileScreen extends StatelessWidget {
         children: [
           ProfileMenuItem(
             icon: Icons.description,
-            title: 'الشروط والأحكام',
-            iconColor: const Color(0xFF5D9C99), // Teal Green
+            title: tr('terms_and_conditions'),
+            iconColor: const Color(0xFF5D9C99),
             onTap: () {
               Get.toNamed('/terms');
             },
@@ -194,8 +214,8 @@ class ProfileScreen extends StatelessWidget {
           Divider(height: 1.h, color: Colors.grey.shade200),
           ProfileMenuItem(
             icon: Icons.privacy_tip,
-            title: 'سياسة الخصوصية',
-            iconColor: const Color(0xFF5D9C99), // Teal Green
+            title: tr('privacy_policy'),
+            iconColor: const Color(0xFF5D9C99),
             onTap: () {
               Get.toNamed('/privacy');
             },
@@ -203,26 +223,26 @@ class ProfileScreen extends StatelessWidget {
           Divider(height: 1.h, color: Colors.grey.shade200),
           ProfileMenuItem(
             icon: Icons.share,
-            title: 'مشاركة التطبيق',
-            iconColor: const Color(0xFF5D9C99), // Teal Green
+            title: tr('share_app'),
+            iconColor: const Color(0xFF5D9C99),
             onTap: () {
-              profileController.shareApp();
+              profileController.shareApp(); // Call shareApp method
             },
           ),
           Divider(height: 1.h, color: Colors.grey.shade200),
           ProfileMenuItem(
             icon: Icons.star_rate,
-            title: 'التقييم والملاحظات',
-            iconColor: const Color(0xFF5D9C99), // Teal Green
+            title: tr('rating_and_feedback'),
+            iconColor: const Color(0xFF5D9C99),
             onTap: () {
-              profileController.openRating();
+              profileController.openRating(); // Call openRating method
             },
           ),
           Divider(height: 1.h, color: Colors.grey.shade200),
           ProfileMenuItem(
             icon: Icons.info,
-            title: 'حول التطبيق',
-            iconColor: const Color(0xFF5D9C99), // Teal Green
+            title: tr('about_app'),
+            iconColor: const Color(0xFF5D9C99),
             onTap: () {
               Get.toNamed('/about');
             },
@@ -230,13 +250,13 @@ class ProfileScreen extends StatelessWidget {
           Divider(height: 1.h, color: Colors.grey.shade200),
           ProfileMenuItem(
             icon: Icons.system_update,
-            title: 'الإصدار',
-            iconColor: const Color(0xFF5D9C99), // Teal Green
+            title: tr('version'),
+            iconColor: const Color(0xFF5D9C99),
             trailing: Obx(
               () => Text(
                 profileController.appInfo.value?.version ?? '1.0.0',
                 style: TextStyle(
-                  color: const Color(0xFF37817D), // Darker Teal
+                  color: const Color(0xFF37817D),
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w500,
                 ),
@@ -247,219 +267,222 @@ class ProfileScreen extends StatelessWidget {
           Divider(height: 1.h, color: Colors.grey.shade200),
           ProfileMenuItem(
             icon: Icons.logout,
-            title: 'تسجيل الخروج',
+            title: tr('logout'),
             iconColor: Colors.red,
             onTap: () {
-              Get.dialog(
-                AlertDialog(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20.r),
-                  ),
-                  title: Text(
-                    'تسجيل الخروج',
-                    style: TextStyle(
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF082726), // Dark Border
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  content: Text(
-                    'هل أنت متأكد أنك تريد تسجيل الخروج؟',
-                    style: TextStyle(
-                      fontSize: 15.sp,
-                      color: const Color(0xFF37817D), // Darker Teal
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  actions: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12.r),
-                              border: Border.all(
-                                color: const Color(0xFF5D9C99), // Teal Green
-                                width: 1.5.w,
-                              ),
-                            ),
-                            child: TextButton(
-                              onPressed: () => Get.back(),
-                              child: Text(
-                                'إلغاء',
-                                style: TextStyle(
-                                  fontSize: 14.sp,
-                                  color: const Color(0xFF5D9C99), // Teal Green
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 10.w),
-                        Expanded(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12.r),
-                              gradient: LinearGradient(
-                                colors: [
-                                  Colors.red.shade400,
-                                  Colors.red.shade600,
-                                ],
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.red.withOpacity(0.3),
-                                  blurRadius: 8.r,
-                                  offset: Offset(0, 4.h),
-                                ),
-                              ],
-                            ),
-                            child: TextButton(
-                              onPressed: () {
-                                Get.back();
-                                authController.logout();
-                              },
-                              child: Text(
-                                'تسجيل الخروج',
-                                style: TextStyle(
-                                  fontSize: 14.sp,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              );
+              _showLogoutDialog();
             },
           ),
           Divider(height: 1.h, color: Colors.grey.shade200),
           ProfileMenuItem(
             icon: Icons.delete_forever,
-            title: 'حذف الحساب',
+            title: tr('delete_account'),
             iconColor: Colors.red.shade700,
             onTap: () {
-              Get.dialog(
-                AlertDialog(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20.r),
-                  ),
-                  title: Text(
-                    'حذف الحساب',
-                    style: TextStyle(
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF082726),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  content: Text(
-                    'هل أنت متأكد أنك تريد حذف الحساب نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.',
-                    style: TextStyle(
-                      fontSize: 15.sp,
-                      color: const Color(0xFF37817D),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  actions: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12.r),
-                              border: Border.all(
-                                color: const Color(0xFF5D9C99),
-                                width: 1.5.w,
-                              ),
-                            ),
-                            child: TextButton(
-                              onPressed: () => Get.back(),
-                              child: Text(
-                                'إلغاء',
-                                style: TextStyle(
-                                  fontSize: 14.sp,
-                                  color: const Color(0xFF5D9C99),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 10.w),
-                        Expanded(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12.r),
-                              gradient: LinearGradient(
-                                colors: [
-                                  Colors.red.shade400,
-                                  Colors.red.shade600,
-                                ],
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.red.withOpacity(0.3),
-                                  blurRadius: 8.r,
-                                  offset: Offset(0, 4.h),
-                                ),
-                              ],
-                            ),
-                            child: TextButton(
-                              onPressed: () async {
-                                Get.back();
-
-                                try {
-                                  // Try deleting from Firebase Auth
-                                  final user = authController.auth.currentUser;
-                                  if (user != null) {
-                                    await user.delete();
-                                    Get.snackbar(
-                                      'تم الحذف بنجاح',
-                                      'تم حذف الحساب بنجاح.',
-                                      snackPosition: SnackPosition.BOTTOM,
-                                      backgroundColor: Colors.green.shade50,
-                                      colorText: Colors.green.shade700,
-                                    );
-                                    await authController.logout();
-                                  }
-                                } catch (e) {
-                                  // Handle errors like requires-recent-login
-                                  await authController.logout();
-                                  Get.snackbar(
-                                    'فشل حذف الحساب',
-                                    'يرجى تسجيل الدخول مرة أخرى ثم المحاولة مجددًا.',
-                                    snackPosition: SnackPosition.BOTTOM,
-                                    backgroundColor: Colors.red.shade50,
-                                    colorText: Colors.red.shade700,
-                                  );
-                                }
-                              },
-                              child: Text(
-                                'حذف الحساب',
-                                style: TextStyle(
-                                  fontSize: 14.sp,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              );
+              _showDeleteDialog();
             },
           ),
           SizedBox(height: 5),
+        ],
+      ),
+    );
+  }
+
+  void _showLogoutDialog() {
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.r),
+        ),
+        title: Text(
+          tr('logout'),
+          style: TextStyle(
+            fontSize: 18.sp,
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFF082726),
+          ),
+          textAlign: TextAlign.center,
+        ),
+        content: Text(
+          tr('confirm_logout'),
+          style: TextStyle(
+            fontSize: 15.sp,
+            color: const Color(0xFF37817D),
+          ),
+          textAlign: TextAlign.center,
+        ),
+        actions: [
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(
+                      color: const Color(0xFF5D9C99),
+                      width: 1.5.w,
+                    ),
+                  ),
+                  child: TextButton(
+                    onPressed: () => Get.back(),
+                    child: Text(
+                      tr('cancel'),
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        color: const Color(0xFF5D9C99),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(width: 10.w),
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12.r),
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.red.shade400,
+                        Colors.red.shade600,
+                      ],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.red.withOpacity(0.3),
+                        blurRadius: 8.r,
+                        offset: Offset(0, 4.h),
+                      ),
+                    ],
+                  ),
+                  child: TextButton(
+                    onPressed: () {
+                      Get.back();
+                      authController.logout();
+                    },
+                    child: Text(
+                      tr('logout'),
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteDialog() {
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.r),
+        ),
+        title: Text(
+          tr('delete_account'),
+          style: TextStyle(
+            fontSize: 18.sp,
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFF082726),
+          ),
+          textAlign: TextAlign.center,
+        ),
+        content: Text(
+          tr('confirm_delete'),
+          style: TextStyle(
+            fontSize: 15.sp,
+            color: const Color(0xFF37817D),
+          ),
+          textAlign: TextAlign.center,
+        ),
+        actions: [
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(
+                      color: const Color(0xFF5D9C99),
+                      width: 1.5.w,
+                    ),
+                  ),
+                  child: TextButton(
+                    onPressed: () => Get.back(),
+                    child: Text(
+                      tr('cancel'),
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        color: const Color(0xFF5D9C99),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(width: 10.w),
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12.r),
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.red.shade400,
+                        Colors.red.shade600,
+                      ],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.red.withOpacity(0.3),
+                        blurRadius: 8.r,
+                        offset: Offset(0, 4.h),
+                      ),
+                    ],
+                  ),
+                  child: TextButton(
+                    onPressed: () async {
+                      Get.back();
+
+                      try {
+                        await Future.delayed(const Duration(milliseconds: 500));
+                        Get.snackbar(
+                          tr('delete_success_title'),
+                          tr('delete_success_message'),
+                          snackPosition: SnackPosition.BOTTOM,
+                          backgroundColor: Colors.green.shade50,
+                          colorText: Colors.green.shade700,
+                        );
+                        await authController.logout();
+                      } catch (e) {
+                        await authController.logout();
+                        Get.snackbar(
+                          tr('delete_failure_title'),
+                          tr('delete_failure_message'),
+                          snackPosition: SnackPosition.BOTTOM,
+                          backgroundColor: Colors.red.shade50,
+                          colorText: Colors.red.shade700,
+                        );
+                      }
+                    },
+                    child: Text(
+                      tr('delete_account'),
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );

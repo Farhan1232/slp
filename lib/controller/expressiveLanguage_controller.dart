@@ -1,41 +1,119 @@
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-/// ---------- Controller ----------
 class ExpressiveLanguageController extends GetxController {
-  final List<Map<String, String>> exercises = [
-    {
-      'title': 'أن يسمي الطفل المجسمات عند عرضها أمامه ( اضغط لمعرفة كيفية تقديم الهدف للطفل)',
-      'url': 'https://drive.google.com/file/d/1WgLixTh28Aw_UmVCv3ru48Hw3LSyf_Ep/view?usp=sharing',
-    },
-    {
-      'title': 'أن يسمي الطفل المهن المختلفة ( اضغط لمعرفة كيفية تقديم الهدف )',
-      'url': 'https://drive.google.com/file/d/1WgLixTh28Aw_UmVCv3ru48Hw3LSyf_Ep/view?usp=sharing',
-    },
-    {
-      'title': 'أن يسمي الطفل أجزاء الوجه ( اضغط لمعرفة كيفية تقديم الهدف )',
-      'url': 'https://drive.google.com/file/d/1OqwRBJM6FhkBOLuqYrJQVpPnrc2O_EI1/view?usp=sharing',
-    },
-    {
-      'title': 'أن يجيب الطفل على صيغ الاسئلة المختلفة ( اضغط لمعرفة كيفية تقديم الهدف )',
-      'url': 'https://drive.google.com/file/d/1ei1eW94rRXV_T3b2lnqA5b9KSeX6kTjC/view?usp=sharing',
-    },
-    {
-      'title': 'أن يسمي الطفل ظروف المكان ( اضغط لمعرفة كيفية تقديم الهدف )',
-      'url': 'https://drive.google.com/file/d/1kd3XhGSiu4jMOMM1CNhrQk4FG0tSyKuD/view?usp=sharing',
-    },
-    {
-      'title': 'أن يقلد الطفل الأصوات البيئية ( اضغط لمعرفة كيفية تقديم الهدف )',
-      'url': 'https://drive.google.com/file/d/1E27HmXMvTXxq4Zl4YufBrFCVvgSBHOAM/view?usp=sharing',
-    },
-  ];
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  
+  var currentLanguage = 'english'.obs;
+  var isLoading = true.obs;
+  var errorMessage = ''.obs;
+  
+  // CHANGED: Make headerData observable so UI updates when it changes
+  var headerData = <String, String>{}.obs;
+  var videos = <Map<String, dynamic>>[].obs;
 
-  /// Open video in browser
-  Future<void> openVideo(String url) async {
-    final uri = Uri.parse(url);
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      Get.snackbar('خطأ', 'تعذر فتح الرابط');
+  @override
+  void onInit() {
+    super.onInit();
+    
+    // Get arguments passed from HomeExercisesScreen
+    final args = Get.arguments;
+    if (args != null) {
+      currentLanguage.value = args['language'] ?? 'english';
+      // Set initial header data from arguments
+      headerData.value = Map<String, String>.from(args['headerData'] ?? {});
     }
+    
+    fetchVideos();
+  }
+
+  void toggleLanguage(String language) {
+    currentLanguage.value = language;
+    // Fetch both header data and videos when language changes
+    fetchHeaderData();
+    fetchVideos();
+  }
+
+  // NEW: Fetch header data from Firestore (same structure as HomeExercisesController)
+  Future<void> fetchHeaderData() async {
+    try {
+      final docRef = _firestore
+          .collection('screens_title')
+          .doc('Home Exercises(تمارين منزلية)')
+          .collection(currentLanguage.value)
+          .doc('content');
+
+      final docSnapshot = await docRef.get();
+
+      if (!docSnapshot.exists) {
+        return; // Keep existing header data if fetch fails
+      }
+
+      final data = docSnapshot.data();
+      final items = data?['items'] as List<dynamic>? ?? [];
+
+      // Index 2 is Expressive Language (based on HomeExercisesController navigation)
+      if (items.length > 2) {
+        final expressiveItem = items[2] as Map<String, dynamic>;
+        headerData.value = {
+          'title': expressiveItem['title']?.toString() ?? '',
+          'description': expressiveItem['description']?.toString() ?? '',
+        };
+      }
+    } catch (e) {
+      // Keep existing header data if fetch fails
+      print('Error fetching header data: $e');
+    }
+  }
+
+  Future<void> fetchVideos() async {
+    try {
+      isLoading.value = true;
+      errorMessage.value = '';
+
+      final docRef = _firestore
+          .collection('videos')
+          .doc(currentLanguage.value)
+          .collection('expressive_language')
+          .doc('data');
+
+      final docSnapshot = await docRef.get();
+
+      if (!docSnapshot.exists) {
+        throw Exception('البيانات غير متوفرة');
+      }
+
+      final data = docSnapshot.data();
+      final videosList = data?['videos'] as List<dynamic>? ?? [];
+
+      if (videosList.isEmpty) {
+        throw Exception('لا توجد فيديوهات');
+      }
+
+      videos.value = videosList
+          .map((video) => {
+                'id': video['id']?.toString() ?? '',
+                'title': video['title']?.toString() ?? '',
+                'videoUrl': video['videoUrl']?.toString() ?? '',
+                'thumbnailUrl': video['thumbnailUrl']?.toString() ?? '',
+                'isWatched': video['isWatched'] ?? false,
+                'createdAt': video['createdAt']?.toString() ?? '',
+              })
+          .toList();
+
+    } catch (e) {
+      errorMessage.value = 'حدث خطأ: ${e.toString()}';
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  void playVideo(int index) {
+    final video = videos[index];
+    Get.toNamed('/video-player', arguments: {
+      'videoUrl': video['videoUrl'],
+      'title': video['title'],
+      'videoId': video['id'],
+    });
   }
 }

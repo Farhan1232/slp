@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:get/get_state_manager/src/rx_flutter/rx_obx_widget.dart';
 import 'package:slp/Screens/quiz/quiz_screen.dart';
 import 'package:slp/controller/quiz_controller.dart';
 
@@ -20,14 +18,14 @@ class ResultScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFFEFEFE), // White background
       appBar: AppBar(
-        title: Text(
-          'النتيجة',
+        title: Obx(() => Text(
+          controller.selectedLanguage.value == 'arabic' ? 'النتيجة' : 'Result',
           style: TextStyle(
             fontSize: 20.sp,
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
-        ),
+        )),
         centerTitle: true,
         backgroundColor: const Color(0xFF5D9C99), // Teal Green
         elevation: 0,
@@ -38,13 +36,22 @@ class ResultScreen extends StatelessWidget {
           ),
         ),
         iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          // Language Toggle Button
+          Padding(
+            padding: EdgeInsets.only(right: 12.w),
+            child: _buildLanguageToggle(),
+          ),
+        ],
       ),
       body: Padding(
         padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
         child: Obx(() {
           final score = controller.score.value;
           final totalQuestions = controller.questions.length;
-          final percentage = (score / totalQuestions * 100).toInt();
+          final percentage = totalQuestions > 0 
+              ? (score / totalQuestions * 100).toInt() 
+              : 0;
           
           return Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -66,8 +73,50 @@ class ResultScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildLanguageToggle() {
+    return Obx(() => Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(20.r),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildLanguageButton('AR', 'arabic'),
+          SizedBox(width: 4.w),
+          _buildLanguageButton('EN', 'english'),
+        ],
+      ),
+    ));
+  }
+
+  Widget _buildLanguageButton(String label, String language) {
+    final isSelected = controller.selectedLanguage.value == language;
+    
+    return GestureDetector(
+      onTap: () {
+        controller.changeLanguage(language);
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(16.r),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12.sp,
+            fontWeight: FontWeight.bold,
+            color: isSelected ? Color(0xFF5D9C99) : Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildResultCard(int score, int totalQuestions, int percentage) {
-    return Container(
+    return Obx(() => Container(
       padding: EdgeInsets.all(24.w),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -122,7 +171,7 @@ class ResultScreen extends StatelessWidget {
           
           // Score Title
           Text(
-            'نتيجتك:',
+            controller.selectedLanguage.value == 'arabic' ? 'نتيجتك:' : 'Your Score:',
             style: TextStyle(
               fontSize: 22.sp,
               fontWeight: FontWeight.bold,
@@ -131,12 +180,16 @@ class ResultScreen extends StatelessWidget {
           ),
           SizedBox(height: 10.h),
           
-          // Score Display
+          // Score Display with Stars
+          _buildStarRating(score, totalQuestions),
+          SizedBox(height: 8.h),
+          
+          // Score Numbers (smaller)
           Text(
             '$score / $totalQuestions',
             style: TextStyle(
-              fontSize: 28.sp,
-              fontWeight: FontWeight.bold,
+              fontSize: 18.sp,
+              fontWeight: FontWeight.w600,
               color: const Color(0xFF5D9C99), // Teal Green
             ),
           ),
@@ -165,16 +218,18 @@ class ResultScreen extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ));
   }
 
   Widget _buildScoreHistory() {
     return Expanded(
-      child: Column(
+      child: Obx(() => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'سجل الدرجات السابقة:',
+            controller.selectedLanguage.value == 'arabic' 
+                ? 'سجل الدرجات السابقة:' 
+                : 'Previous Scores:',
             style: TextStyle(
               fontSize: 18.sp,
               fontWeight: FontWeight.bold,
@@ -199,85 +254,104 @@ class ResultScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Obx(() => ListView.builder(
-                itemCount: controller.scoreHistory.length,
-                itemBuilder: (context, index) {
-                  final attemptScore = controller.scoreHistory[index];
-                  final attemptPercentage = (attemptScore / controller.questions.length * 100).toInt();
-                  
-                  return Container(
-                    margin: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFEFEFE), // White background
-                      borderRadius: BorderRadius.circular(12.r),
-                      border: Border.all(
-                        color: const Color(0xFF5D9C99).withOpacity(0.1),
-                        width: 1.w,
-                      ),
-                    ),
-                    child: ListTile(
-                      leading: Container(
-                        width: 40.w,
-                        height: 40.h,
-                        decoration: BoxDecoration(
-                          color: _getScoreColor(attemptPercentage).withOpacity(0.1),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: _getScoreColor(attemptPercentage),
-                            width: 1.5.w,
-                          ),
+              child: controller.scoreHistory.isEmpty
+                  ? Center(
+                      child: Text(
+                        controller.selectedLanguage.value == 'arabic'
+                            ? 'لا توجد محاولات سابقة'
+                            : 'No previous attempts',
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          color: Color(0xFF082726).withOpacity(0.6),
                         ),
-                        child: Center(
-                          child: Text(
-                            '${index + 1}',
-                            style: TextStyle(
-                              fontSize: 14.sp,
-                              fontWeight: FontWeight.bold,
-                              color: _getScoreColor(attemptPercentage),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: controller.scoreHistory.length,
+                      itemBuilder: (context, index) {
+                        final attemptScore = controller.scoreHistory[index];
+                        final totalQuestions = controller.questions.length > 0 
+                            ? controller.questions.length 
+                            : 1; // Prevent division by zero
+                        final attemptPercentage = (attemptScore / totalQuestions * 100).toInt();
+                        
+                        return Container(
+                          margin: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEFEFE), // White background
+                            borderRadius: BorderRadius.circular(12.r),
+                            border: Border.all(
+                              color: const Color(0xFF5D9C99).withOpacity(0.1),
+                              width: 1.w,
                             ),
                           ),
-                        ),
-                      ),
-                      title: Text(
-                        'محاولة ${index + 1}',
-                        style: TextStyle(
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF082726), // Dark Border
-                        ),
-                      ),
-                      trailing: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-                        decoration: BoxDecoration(
-                          color: _getScoreColor(attemptPercentage).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8.r),
-                          border: Border.all(
-                            color: _getScoreColor(attemptPercentage),
-                            width: 1.w,
+                          child: ListTile(
+                            leading: Container(
+                              width: 40.w,
+                              height: 40.h,
+                              decoration: BoxDecoration(
+                                color: _getScoreColor(attemptPercentage).withOpacity(0.1),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: _getScoreColor(attemptPercentage),
+                                  width: 1.5.w,
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '${index + 1}',
+                                  style: TextStyle(
+                                    fontSize: 14.sp,
+                                    fontWeight: FontWeight.bold,
+                                    color: _getScoreColor(attemptPercentage),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            title: Text(
+                              controller.selectedLanguage.value == 'arabic'
+                                  ? 'محاولة ${index + 1}'
+                                  : 'Attempt ${index + 1}',
+                              style: TextStyle(
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF082726), // Dark Border
+                              ),
+                            ),
+                            trailing: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                // Stars for history
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: _buildHistoryStars(attemptScore, totalQuestions),
+                                ),
+                                SizedBox(height: 4.h),
+                                // Score numbers
+                                Text(
+                                  '$attemptScore / $totalQuestions',
+                                  style: TextStyle(
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w600,
+                                    color: _getScoreColor(attemptPercentage),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        child: Text(
-                          '$attemptScore / ${controller.questions.length}',
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.bold,
-                            color: _getScoreColor(attemptPercentage),
-                          ),
-                        ),
-                      ),
+                        );
+                      },
                     ),
-                  );
-                },
-              )),
             ),
           ),
         ],
-      ),
+      )),
     );
   }
 
   Widget _buildRetryButton() {
-    return Container(
+    return Obx(() => Container(
       width: double.infinity,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(15.r),
@@ -291,7 +365,8 @@ class ResultScreen extends StatelessWidget {
       ),
       child: ElevatedButton(
         onPressed: () {
-          Get.to(() => QuizScreen());
+          controller.resetQuiz();
+          Get.off(() => QuizScreen());
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFFF8B134), // Mustard Yellow
@@ -303,14 +378,83 @@ class ResultScreen extends StatelessWidget {
           elevation: 0,
         ),
         child: Text(
-          'إعادة المحاولة',
+          controller.selectedLanguage.value == 'arabic' 
+              ? 'إعادة المحاولة' 
+              : 'Retry',
           style: TextStyle(
             fontSize: 16.sp,
             fontWeight: FontWeight.bold,
           ),
         ),
       ),
+    ));
+  }
+
+  Widget _buildStarRating(int score, int totalQuestions) {
+    // Calculate number of stars (out of 5)
+    int maxStars = 5;
+    double starScore = totalQuestions > 0 ? (score / totalQuestions) * maxStars : 0;
+    int fullStars = starScore.floor();
+    bool hasHalfStar = (starScore - fullStars) >= 0.5;
+    
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(maxStars, (index) {
+        if (index < fullStars) {
+          // Full star
+          return Icon(
+            Icons.star,
+            color: Color(0xFFF8B134), // Mustard Yellow
+            size: 36.sp,
+          );
+        } else if (index == fullStars && hasHalfStar) {
+          // Half star
+          return Icon(
+            Icons.star_half,
+            color: Color(0xFFF8B134),
+            size: 36.sp,
+          );
+        } else {
+          // Empty star
+          return Icon(
+            Icons.star_border,
+            color: Color(0xFFF8B134).withOpacity(0.3),
+            size: 36.sp,
+          );
+        }
+      }),
     );
+  }
+
+  List<Widget> _buildHistoryStars(int score, int totalQuestions) {
+    int maxStars = 5;
+    double starScore = totalQuestions > 0 ? (score / totalQuestions) * maxStars : 0;
+    int fullStars = starScore.floor();
+    bool hasHalfStar = (starScore - fullStars) >= 0.5;
+    
+    List<Widget> stars = [];
+    for (int i = 0; i < maxStars; i++) {
+      if (i < fullStars) {
+        stars.add(Icon(
+          Icons.star,
+          color: Color(0xFFF8B134),
+          size: 16.sp,
+        ));
+      } else if (i == fullStars && hasHalfStar) {
+        stars.add(Icon(
+          Icons.star_half,
+          color: Color(0xFFF8B134),
+          size: 16.sp,
+        ));
+      } else {
+        stars.add(Icon(
+          Icons.star_border,
+          color: Color(0xFFF8B134).withOpacity(0.3),
+          size: 16.sp,
+        ));
+      }
+    }
+    return stars;
   }
 
   Color _getScoreColor(int percentage) {
@@ -328,9 +472,16 @@ class ResultScreen extends StatelessWidget {
   }
 
   String _getPerformanceMessage(int percentage) {
-    if (percentage >= 80) return 'أداء ممتاز! أحسنت العمل 🌟';
-    if (percentage >= 60) return 'أداء جيد، استمر في التقدم 💪';
-    if (percentage >= 40) return 'ليس سيئاً، يمكنك التحسن 📈';
-    return 'حاول مرة أخرى، يمكنك فعل أفضل 🔄';
+    if (controller.selectedLanguage.value == 'arabic') {
+      if (percentage >= 80) return 'أداء ممتاز! أحسنت العمل 🌟';
+      if (percentage >= 60) return 'أداء جيد، استمر في التقدم 💪';
+      if (percentage >= 40) return 'ليس سيئاً، يمكنك التحسن 📈';
+      return 'حاول مرة أخرى، يمكنك فعل أفضل 🔄';
+    } else {
+      if (percentage >= 80) return 'Excellent performance! Well done 🌟';
+      if (percentage >= 60) return 'Good job, keep progressing 💪';
+      if (percentage >= 40) return 'Not bad, you can improve 📈';
+      return 'Try again, you can do better 🔄';
+    }
   }
 }

@@ -1,8 +1,109 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:get/get.dart';
 
-class FaqScreen extends StatelessWidget {
+class FaqScreen extends StatefulWidget {
   const FaqScreen({super.key});
+
+  @override
+  State<FaqScreen> createState() => _FaqScreenState();
+}
+
+class _FaqScreenState extends State<FaqScreen> {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  String _selectedLanguage = 'english'; // Default language
+  bool _isLoading = true;
+  
+  Map<String, dynamic>? _headerData;
+  List<Map<String, dynamic>> _faqList = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchData();
+  }
+
+  Future<void> _fetchData() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Fetch header data
+      await _fetchHeaderData();
+      
+      // Fetch FAQ questions
+      await _fetchFaqQuestions();
+      
+    } catch (e) {
+      print('Error fetching data: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('خطأ في تحميل البيانات: $e')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _fetchHeaderData() async {
+    try {
+      DocumentSnapshot headerDoc = await _firestore
+          .collection('screens_title')
+          .doc('App Questions(أسئلة عن التطبيق)')
+          .collection(_selectedLanguage)
+          .doc('content')
+          .get();
+
+      if (headerDoc.exists) {
+        setState(() {
+          _headerData = headerDoc.data() as Map<String, dynamic>?;
+        });
+      }
+    } catch (e) {
+      print('Error fetching header: $e');
+    }
+  }
+
+  Future<void> _fetchFaqQuestions() async {
+    try {
+      QuerySnapshot faqSnapshot = await _firestore
+          .collection('questions')
+          .doc(_selectedLanguage)
+          .collection('qa')
+          .orderBy('createdAt', descending: false)
+          .get();
+
+      List<Map<String, dynamic>> faqs = [];
+      for (var doc in faqSnapshot.docs) {
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+        faqs.add({
+          'question': data['question'] ?? '',
+          'answer': data['answer'] ?? '',
+          'createdAt': data['createdAt'] ?? '',
+        });
+      }
+
+      setState(() {
+        _faqList = faqs;
+      });
+    } catch (e) {
+      print('Error fetching FAQs: $e');
+    }
+  }
+
+  void _changeLanguage(String language) {
+    setState(() {
+      _selectedLanguage = language;
+    });
+    _fetchData();
+
+    Get.updateLocale(
+      language == 'arabic' ? const Locale('ar') : const Locale('en'),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -12,84 +113,106 @@ class FaqScreen extends StatelessWidget {
       designSize: const Size(360, 800), // Standard mobile design size
     );
 
-    final faqs = [
-      {
-        'question': 'ما هي أهداف تطبيق النطق واللغة؟',
-        'answer':
-            'يهدف التطبيق إلى دعم الأهالي والأخصائيين في تطوير مهارات اللغة والتواصل لدى الأطفال من خلال تدريبات منزلية منظمة.'
-      },
-      {
-        'question': 'هل يغني التطبيق عن جلسات أخصائي النطق واللغة؟',
-        'answer':
-            'لا، التطبيق يُستخدم كمساعد فقط، بينما تبقى الجلسات مع الأخصائي ضرورية لتقييم الحالة ووضع خطة مناسبة.'
-      },
-      {
-        'question': 'كيف أستخدم التدريبات المنزلية بشكل فعال؟',
-        'answer':
-            'يُفضل تطبيق التمارين بانتظام لمدة قصيرة يومياً (10-15 دقيقة) ومراقبة تقدم الطفل دون ضغط أو توتر.'
-      },
-      {
-        'question': 'هل يمكن حفظ تقدّم طفلي؟',
-        'answer':
-            'نعم، التطبيق يقوم بحفظ البيانات والنتائج في التخزين المحلي بحيث يمكنك مراجعتها لاحقاً.'
-      },
-      {
-        'question': 'هل يمكنني تعديل صورة الملف الشخصي؟',
-        'answer': 'نعم، يمكنك تغيير الصورة من صفحة الملف الشخصي واختيار صورة جديدة من المعرض.'
-      },
-      {
-        'question': 'كيف أرسل ملاحظاتي أو تقييمي للتطبيق؟',
-        'answer':
-            'يمكنك إرسال رأيك أو تقييمك من خلال صفحة "التقييم والتغذية الراجعة" في القائمة الجانبية.'
-      },
-      {
-        'question': 'هل يعمل التطبيق بدون اتصال بالإنترنت؟',
-        'answer': 'نعم، معظم الخصائص الأساسية تعمل بدون اتصال بالإنترنت، مثل التدريبات المنزلية والنتائج.'
-      },
-      {
-        'question': 'كيف يمكنني استعادة بياناتي إذا حذفت التطبيق؟',
-        'answer':
-            'البيانات تحفظ محليًا، لذا يُنصح بعدم حذف التطبيق للحفاظ على سجلك التدريبي.'
-      },
-    ];
-
     return Scaffold(
       backgroundColor: const Color(0xFFFEFEFE), // White background
       appBar: AppBar(
-        title: Text(
-          'الأسئلة الشائعة',
-          style: TextStyle(
-            fontSize: 20.sp,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: const Color(0xFF5D9C99), // Teal Green
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.only(
-            bottomLeft: Radius.circular(20.r),
-            bottomRight: Radius.circular(20.r),
-          ),
-        ),
-        iconTheme: const IconThemeData(color: Colors.white),
+    title: Text(
+      'App_questions'.tr, // <-- use GetX localization key
+      style: TextStyle(
+        fontWeight: FontWeight.bold,
+        fontSize: 20.sp,
+        color: Colors.white,
       ),
-      body: Column(
+    ),
+    centerTitle: true,
+    backgroundColor: const Color(0xFF5D9C99),
+    elevation: 0,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.only(
+        bottomLeft: Radius.circular(20.r),
+        bottomRight: Radius.circular(20.r),
+      ),
+    ),
+    iconTheme: const IconThemeData(color: Colors.white),
+  ),
+      body: _isLoading
+          ? Center(
+              child: CircularProgressIndicator(
+                color: const Color(0xFF5D9C99),
+              ),
+            )
+          : Column(
+              children: [
+                // Language Toggle Buttons
+                _buildLanguageToggle(),
+                
+                // Decorative header section
+                _buildHeaderSection(),
+                SizedBox(height: 10.h),
+
+                // FAQ List
+                Expanded(
+                  child: _faqList.isEmpty
+                      ? Center(
+                          child: Text(
+                            _selectedLanguage == 'arabic'
+                                ? 'لا توجد أسئلة متاحة'
+                                : 'No questions available',
+                            style: TextStyle(
+                              fontSize: 16.sp,
+                              color: const Color(0xFF37817D),
+                            ),
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: _faqList.length,
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 16.w, vertical: 8.h),
+                          itemBuilder: (context, index) {
+                            final faq = _faqList[index];
+                            return _buildFaqItem(faq, index, context);
+                          },
+                        ),
+                ),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildLanguageToggle() {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+      padding: EdgeInsets.all(4.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(
+          color: const Color(0xFF5D9C99).withOpacity(0.3),
+          width: 1.5.w,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF37817D).withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
         children: [
-          // Decorative header section
-          _buildHeaderSection(),
-          SizedBox(height: 10.h),
-          
-          // FAQ List
           Expanded(
-            child: ListView.builder(
-              itemCount: faqs.length,
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-              itemBuilder: (context, index) {
-                final faq = faqs[index];
-                return _buildFaqItem(faq, index, context);
-              },
+            child: _buildLanguageButton(
+              label: 'العربية',
+              isSelected: _selectedLanguage == 'arabic',
+              onTap: () => _changeLanguage('arabic'),
+            ),
+          ),
+          SizedBox(width: 8.w),
+          Expanded(
+            child: _buildLanguageButton(
+              label: 'English',
+              isSelected: _selectedLanguage == 'english',
+              onTap: () => _changeLanguage('english'),
             ),
           ),
         ],
@@ -97,7 +220,49 @@ class FaqScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildLanguageButton({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 12.h),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? const Color(0xFF5D9C99)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(10.r),
+          border: isSelected
+              ? Border.all(
+                  color: const Color(0xFF082726),
+                  width: 1.5.w,
+                )
+              : null,
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+              color: isSelected ? Colors.white : const Color(0xFF37817D),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildHeaderSection() {
+    if (_headerData == null) {
+      return const SizedBox.shrink();
+    }
+
+    String title = _headerData!['title'] ?? '';
+    String description = _headerData!['description'] ?? '';
+
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
       padding: EdgeInsets.all(16.w),
@@ -132,10 +297,15 @@ class FaqScreen extends StatelessWidget {
           SizedBox(width: 12.w),
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: _selectedLanguage == 'arabic'
+                  ? CrossAxisAlignment.end
+                  : CrossAxisAlignment.start,
               children: [
                 Text(
-                  'أسئلة متكررة',
+                  title,
+                  textAlign: _selectedLanguage == 'arabic'
+                      ? TextAlign.right
+                      : TextAlign.left,
                   style: TextStyle(
                     fontSize: 16.sp,
                     fontWeight: FontWeight.bold,
@@ -144,7 +314,10 @@ class FaqScreen extends StatelessWidget {
                 ),
                 SizedBox(height: 4.h),
                 Text(
-                  'إجابات على الأسئلة الأكثر شيوعاً حول التطبيق',
+                  description,
+                  textAlign: _selectedLanguage == 'arabic'
+                      ? TextAlign.right
+                      : TextAlign.left,
                   style: TextStyle(
                     fontSize: 12.sp,
                     color: const Color(0xFF37817D), // Darker Teal
@@ -158,7 +331,8 @@ class FaqScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFaqItem(Map<String, String> faq, int index, BuildContext context) {
+  Widget _buildFaqItem(
+      Map<String, dynamic> faq, int index, BuildContext context) {
     return Container(
       margin: EdgeInsets.symmetric(vertical: 6.h),
       child: Card(
@@ -166,7 +340,8 @@ class FaqScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(12.r),
         ),
         elevation: 2,
-        shadowColor: const Color(0xFF37817D).withOpacity(0.2), // Darker Teal shadow
+        shadowColor:
+            const Color(0xFF37817D).withOpacity(0.2), // Darker Teal shadow
         child: ExpansionTile(
           collapsedIconColor: const Color(0xFF5D9C99), // Teal Green
           iconColor: const Color(0xFFF8B134), // Mustard Yellow when expanded
@@ -197,8 +372,10 @@ class FaqScreen extends StatelessWidget {
             ),
           ),
           title: Text(
-            faq['question']!,
-            textAlign: TextAlign.right,
+            faq['question'] ?? '',
+            textAlign: _selectedLanguage == 'arabic'
+                ? TextAlign.right
+                : TextAlign.left,
             style: TextStyle(
               fontSize: 15.sp,
               fontWeight: FontWeight.w600,
@@ -211,14 +388,16 @@ class FaqScreen extends StatelessWidget {
               width: double.infinity,
               padding: EdgeInsets.all(16.w),
               decoration: BoxDecoration(
-                color: const Color(0xFF5D9C99).withOpacity(0.05), // Teal Green light
+                color: const Color(0xFF5D9C99)
+                    .withOpacity(0.05), // Teal Green light
                 borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(12.r),
                   bottomRight: Radius.circular(12.r),
                 ),
                 border: Border(
                   top: BorderSide(
-                    color: const Color(0xFF37817D).withOpacity(0.2), // Darker Teal
+                    color: const Color(0xFF37817D)
+                        .withOpacity(0.2), // Darker Teal
                     width: 1.w,
                   ),
                 ),
@@ -230,7 +409,11 @@ class FaqScreen extends StatelessWidget {
                   Container(
                     width: 24.w,
                     height: 24.h,
-                    margin: EdgeInsets.only(left: 8.w, top: 2.h),
+                    margin: EdgeInsets.only(
+                      left: _selectedLanguage == 'english' ? 8.w : 0,
+                      right: _selectedLanguage == 'arabic' ? 8.w : 0,
+                      top: 2.h,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF37817D), // Darker Teal
                       shape: BoxShape.circle,
@@ -243,8 +426,10 @@ class FaqScreen extends StatelessWidget {
                   ),
                   Expanded(
                     child: Text(
-                      faq['answer']!,
-                      textAlign: TextAlign.right,
+                      faq['answer'] ?? '',
+                      textAlign: _selectedLanguage == 'arabic'
+                          ? TextAlign.right
+                          : TextAlign.left,
                       style: TextStyle(
                         fontSize: 14.sp,
                         height: 1.6,

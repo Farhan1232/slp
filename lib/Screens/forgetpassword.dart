@@ -1,17 +1,27 @@
-// forget_password_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:slp/Screens/screen_widget_button.dart';
 import 'package:slp/controller/auth_controller.dart';
+
 import 'package:slp/widget/button_widget.dart';
 import 'package:slp/widget/textfield.dart';
 
+
 class ForgetPasswordScreen extends StatelessWidget {
   final AuthController authController = Get.find<AuthController>();
+  final LanguageController languageController = Get.find<LanguageController>();
   final TextEditingController emailController = TextEditingController();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
   ForgetPasswordScreen({Key? key}) : super(key: key);
+
+  String tr(String key) {
+    return languageController.getTranslation(
+      key,
+      languageController.forgotPasswordScreenLanguage.value,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,20 +52,35 @@ class ForgetPasswordScreen extends StatelessWidget {
           ),
           child: Form(
             key: formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildTopSection(),
-                SizedBox(height: 30.h),
-                _buildHeaderText(),
-                SizedBox(height: 50.h),
-                _buildEmailField(),
-                SizedBox(height: 40.h),
-                _buildResetButton(),
-                SizedBox(height: 30.h),
-                _buildBackToLogin(),
-              ],
-            ),
+            child: Obx(() {
+              // Force rebuild when language changes
+              final _ = languageController.forgotPasswordScreenLanguage.value;
+              
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: ScreenLanguageButton(
+                      currentLanguage: languageController.forgotPasswordScreenLanguage.value,
+                      onLanguageChange: (lang) {
+                        languageController.changeForgotPasswordLanguage(lang);
+                      },
+                    ),
+                  ),
+                  SizedBox(height: 10.h),
+                  _buildTopSection(),
+                  SizedBox(height: 30.h),
+                  _buildHeaderText(),
+                  SizedBox(height: 50.h),
+                  _buildEmailField(),
+                  SizedBox(height: 40.h),
+                  _buildResetButton(),
+                  SizedBox(height: 30.h),
+                  _buildBackToLogin(),
+                ],
+              );
+            }),
           ),
         ),
       ),
@@ -122,7 +147,7 @@ class ForgetPasswordScreen extends StatelessWidget {
           ),
           child: Center(
             child: Text(
-              'تحتاج مساعدة؟',
+              tr('need_help'),
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 16.sp,
@@ -140,7 +165,7 @@ class ForgetPasswordScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'نسيت كلمة المرور؟',
+          tr('forgot_password_header'),
           style: TextStyle(
             fontSize: 32.sp,
             fontWeight: FontWeight.bold,
@@ -150,7 +175,7 @@ class ForgetPasswordScreen extends StatelessWidget {
         ),
         SizedBox(height: 8.h),
         Text(
-          'أدخل بريدك الإلكتروني وسنرسل لك رابطًا لإعادة تعيين كلمة المرور',
+          tr('reset_password_instruction'),
           style: TextStyle(
             fontSize: 16.sp,
             color: const Color(0xFF37817D),
@@ -176,16 +201,16 @@ class ForgetPasswordScreen extends StatelessWidget {
       ),
       child: CustomTextField(
         controller: emailController,
-        hintText: 'أدخل بريدك الإلكتروني',
-        labelText: 'البريد الإلكتروني',
+        hintText: tr('enter_your_email'),
+        labelText: tr('email'),
         prefixIcon: Icons.email_outlined,
         keyboardType: TextInputType.emailAddress,
         validator: (value) {
           if (value == null || value.isEmpty) {
-            return 'الرجاء إدخال البريد الإلكتروني';
+            return tr('email_required');
           }
           if (!GetUtils.isEmail(value)) {
-            return 'الرجاء إدخال بريد إلكتروني صالح';
+            return tr('valid_email_required');
           }
           return null;
         },
@@ -206,7 +231,7 @@ class ForgetPasswordScreen extends StatelessWidget {
             ],
           ),
           child: CustomButton(
-            text: 'إرسال رابط إعادة التعيين',
+            text: tr('send_reset_link'),
             onPressed: () {
               if (formKey.currentState!.validate()) {
                 authController.resetPassword(
@@ -235,7 +260,7 @@ class ForgetPasswordScreen extends StatelessWidget {
             Get.back();
           },
           child: Text(
-            'العودة لتسجيل الدخول',
+            tr('back_to_login'),
             style: TextStyle(
               color: const Color(0xFF082726),
               fontWeight: FontWeight.w600,

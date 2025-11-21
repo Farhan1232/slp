@@ -1,10 +1,12 @@
 // user_model.dart
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class UserModel {
   final String? id;
   final String email;
   final String? name;
   final String? photoUrl;
-  final String? localImagePath;
+  final String? localImagePath; // Keeping this for UI state if needed, but not storing in Firestore
 
   UserModel({
     this.id,
@@ -14,21 +16,36 @@ class UserModel {
     this.localImagePath,
   });
 
+  // Method to convert model to a map for saving to Firestore
   Map<String, dynamic> toJson() {
     return {
       'id': id,
       'email': email,
       'name': name,
       'photoUrl': photoUrl,
+      // 'localImagePath' is for temporary/local use and not stored in Firestore
     };
   }
 
+  // Factory method to create model from a map, useful for fetching from Firestore
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       id: json['id'],
       email: json['email'],
       name: json['name'],
       photoUrl: json['photoUrl'],
+      // localImagePath is not loaded from Firestore
+    );
+  }
+
+  // Factory method to create model from a Firestore DocumentSnapshot
+  factory UserModel.fromDocumentSnapshot(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return UserModel(
+      id: doc.id,
+      email: data['email'] ?? '',
+      name: data['name'],
+      photoUrl: data['photoUrl'],
     );
   }
 
@@ -49,7 +66,7 @@ class UserModel {
   }
 }
 
-// app_info_model.dart
+// app_info_model.dart (No change needed)
 class AppInfoModel {
   final String? termsAndConditions;
   final String? privacyPolicy;

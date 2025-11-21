@@ -1,24 +1,31 @@
-// login_screen.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:slp/Screens/forgetpassword.dart';
-import 'package:slp/Screens/signup.dart';
+import 'package:slp/Screens/screen_widget_button.dart';
 import 'package:slp/controller/auth_controller.dart';
+
 import 'package:slp/widget/button_widget.dart';
 import 'package:slp/widget/textfield.dart';
 
+
 class LoginScreen extends StatelessWidget {
   final AuthController authController = Get.put(AuthController());
+  final LanguageController languageController = Get.put(LanguageController());
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
   LoginScreen({Key? key}) : super(key: key);
 
+  String tr(String key) {
+    return languageController.getTranslation(
+      key,
+      languageController.loginScreenLanguage.value,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Initialize ScreenUtil for responsiveness
     ScreenUtil.init(
       context,
       designSize: const Size(360, 800),
@@ -31,20 +38,35 @@ class LoginScreen extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
           child: Form(
             key: formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildTopSection(),
-                SizedBox(height: 40.h),
-                _buildWelcomeText(),
-                SizedBox(height: 30.h),
-                _buildFormFields(),
-                SizedBox(height: 30.h),
-                _buildLoginButton(),
-                SizedBox(height: 30.h),
-                _buildSignUpSection(),
-              ],
-            ),
+            child: Obx(() {
+              // Force rebuild when language changes
+              final _ = languageController.loginScreenLanguage.value;
+              
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: ScreenLanguageButton(
+                      currentLanguage: languageController.loginScreenLanguage.value,
+                      onLanguageChange: (lang) {
+                        languageController.changeLoginLanguage(lang);
+                      },
+                    ),
+                  ),
+                  SizedBox(height: 10.h),
+                  _buildTopSection(),
+                  SizedBox(height: 40.h),
+                  _buildWelcomeText(),
+                  SizedBox(height: 30.h),
+                  _buildFormFields(),
+                  SizedBox(height: 30.h),
+                  _buildLoginButton(),
+                  SizedBox(height: 30.h),
+                  _buildSignUpSection(),
+                ],
+              );
+            }),
           ),
         ),
       ),
@@ -111,7 +133,7 @@ class LoginScreen extends StatelessWidget {
           ),
           child: Center(
             child: Text(
-              'مرحباً!',
+              tr('hello_exclamation'),
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 16.sp,
@@ -129,7 +151,7 @@ class LoginScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'مرحباً بعودتك',
+          tr('welcome_back'),
           style: TextStyle(
             fontSize: 32.sp,
             fontWeight: FontWeight.bold,
@@ -139,7 +161,7 @@ class LoginScreen extends StatelessWidget {
         ),
         SizedBox(height: 8.h),
         Text(
-          'سجّل الدخول للمتابعة',
+          tr('login_to_continue'),
           style: TextStyle(
             fontSize: 16.sp,
             color: const Color(0xFF37817D),
@@ -166,16 +188,16 @@ class LoginScreen extends StatelessWidget {
           ),
           child: CustomTextField(
             controller: emailController,
-            hintText: 'أدخل بريدك الإلكتروني',
-            labelText: 'البريد الإلكتروني',
+            hintText: tr('enter_your_email'),
+            labelText: tr('email'),
             prefixIcon: Icons.email_outlined,
             keyboardType: TextInputType.emailAddress,
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return 'الرجاء إدخال البريد الإلكتروني';
+                return tr('email_required');
               }
               if (!GetUtils.isEmail(value)) {
-                return 'الرجاء إدخال بريد إلكتروني صحيح';
+                return tr('valid_email_required');
               }
               return null;
             },
@@ -195,8 +217,8 @@ class LoginScreen extends StatelessWidget {
           ),
           child: Obx(() => CustomTextField(
                 controller: passwordController,
-                hintText: 'أدخل كلمة المرور',
-                labelText: 'كلمة المرور',
+                hintText: tr('enter_password'),
+                labelText: tr('password'),
                 prefixIcon: Icons.lock_outline,
                 obscureText: !authController.isPasswordVisible.value,
                 suffixIcon: IconButton(
@@ -210,10 +232,10 @@ class LoginScreen extends StatelessWidget {
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'الرجاء إدخال كلمة المرور';
+                    return tr('password_required');
                   }
                   if (value.length < 6) {
-                    return 'يجب أن تتكون كلمة المرور من 6 أحرف على الأقل';
+                    return tr('password_min_length');
                   }
                   return null;
                 },
@@ -224,10 +246,10 @@ class LoginScreen extends StatelessWidget {
           alignment: Alignment.centerRight,
           child: TextButton(
             onPressed: () {
-              Get.to(() => ForgetPasswordScreen());
+              Get.toNamed('/forgot-password');
             },
             child: Text(
-              'نسيت كلمة المرور؟',
+              tr('forgot_password'),
               style: TextStyle(
                 color: const Color(0xFF37817D),
                 fontWeight: FontWeight.w600,
@@ -253,7 +275,7 @@ class LoginScreen extends StatelessWidget {
             ],
           ),
           child: CustomButton(
-            text: 'تسجيل الدخول',
+            text: tr('login'),
             onPressed: () {
               if (formKey.currentState!.validate()) {
                 authController.login(
@@ -272,7 +294,7 @@ class LoginScreen extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
-          "ليس لديك حساب؟ ",
+          tr("no_account"),
           style: TextStyle(
             color: const Color(0xFF37817D),
             fontSize: 14.sp,
@@ -289,10 +311,10 @@ class LoginScreen extends StatelessWidget {
           ),
           child: TextButton(
             onPressed: () {
-              Get.to(() => SignupScreen());
+              Get.toNamed('/signup');
             },
             child: Text(
-              'إنشاء حساب',
+              tr('create_account'),
               style: TextStyle(
                 color: const Color(0xFF082726),
                 fontWeight: FontWeight.bold,

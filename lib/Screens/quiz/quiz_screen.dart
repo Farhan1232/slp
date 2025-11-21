@@ -17,14 +17,16 @@ class QuizScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFFEFEFE), // White background
       appBar: AppBar(
-        title: Text(
-          'اختبار النطق واللغة',
+        title: Obx(() => Text(
+          controller.selectedLanguage.value == 'arabic' 
+              ? 'اختبار النطق واللغة' 
+              : 'Speech & Language Quiz',
           style: TextStyle(
             fontSize: 20.sp,
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
-        ),
+        )),
         centerTitle: true,
         backgroundColor: const Color(0xFF5D9C99), // Teal Green
         elevation: 0,
@@ -35,9 +37,105 @@ class QuizScreen extends StatelessWidget {
           ),
         ),
         iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          // Language Toggle Button
+          Padding(
+            padding: EdgeInsets.only(right: 12.w),
+            child: _buildLanguageToggle(),
+          ),
+        ],
       ),
       body: SafeArea(
         child: Obx(() {
+          // Show loading indicator
+          if (controller.isLoading.value) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF5D9C99)),
+                  ),
+                  SizedBox(height: 20.h),
+                  Text(
+                    controller.selectedLanguage.value == 'arabic'
+                        ? 'جاري تحميل الأسئلة...'
+                        : 'Loading questions...',
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      color: Color(0xFF082726),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          // Show error message
+          if (controller.errorMessage.value.isNotEmpty) {
+            return Center(
+              child: Padding(
+                padding: EdgeInsets.all(24.w),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 60.sp,
+                      color: Colors.red,
+                    ),
+                    SizedBox(height: 20.h),
+                    Text(
+                      controller.errorMessage.value,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        color: Color(0xFF082726),
+                      ),
+                    ),
+                    SizedBox(height: 30.h),
+                    ElevatedButton(
+                      onPressed: () => controller.loadQuestions(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFF5D9C99),
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                      ),
+                      child: Text(
+                        controller.selectedLanguage.value == 'arabic'
+                            ? 'إعادة المحاولة'
+                            : 'Retry',
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          // Show quiz if questions are loaded
+          if (controller.questions.isEmpty) {
+            return Center(
+              child: Text(
+                controller.selectedLanguage.value == 'arabic'
+                    ? 'لا توجد أسئلة متاحة'
+                    : 'No questions available',
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  color: Color(0xFF082726),
+                ),
+              ),
+            );
+          }
+
           final q = controller.questions[controller.currentIndex.value];
           final progress = (controller.currentIndex.value + 1) / controller.questions.length;
 
@@ -78,8 +176,48 @@ class QuizScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildLanguageToggle() {
+    return Obx(() => Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(20.r),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildLanguageButton('AR', 'arabic'),
+          SizedBox(width: 4.w),
+          _buildLanguageButton('EN', 'english'),
+        ],
+      ),
+    ));
+  }
+
+  Widget _buildLanguageButton(String label, String language) {
+    final isSelected = controller.selectedLanguage.value == language;
+    
+    return GestureDetector(
+      onTap: () => controller.changeLanguage(language),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(16.r),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12.sp,
+            fontWeight: FontWeight.bold,
+            color: isSelected ? Color(0xFF5D9C99) : Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildProgressSection(double progress, bool isSmallScreen) {
-    return Column(
+    return Obx(() => Column(
       children: [
         // Progress Bar
         Container(
@@ -93,7 +231,7 @@ class QuizScreen extends StatelessWidget {
               // Progress
               AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
-                width: MediaQuery.of(Get.context!).size.width * progress,
+                width: MediaQuery.of(Get.context!).size.width * progress * 0.9,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
@@ -138,7 +276,9 @@ class QuizScreen extends StatelessWidget {
                 ),
               ),
               child: Text(
-                'السؤال ${controller.currentIndex.value + 1} من ${controller.questions.length}',
+                controller.selectedLanguage.value == 'arabic'
+                    ? 'السؤال ${controller.currentIndex.value + 1} من ${controller.questions.length}'
+                    : 'Question ${controller.currentIndex.value + 1} of ${controller.questions.length}',
                 style: TextStyle(
                   fontSize: isSmallScreen ? 12.sp : 14.sp,
                   fontWeight: FontWeight.bold,
@@ -149,7 +289,7 @@ class QuizScreen extends StatelessWidget {
           ],
         ),
       ],
-    );
+    ));
   }
 
   Widget _buildQuestionCard(Question q, bool isSmallScreen, bool isVerySmallScreen) {
@@ -223,14 +363,16 @@ class QuizScreen extends StatelessWidget {
           // Hint Text
           if (!isVerySmallScreen) ...[
             SizedBox(height: 8.h),
-            Text(
-              'اختر الإجابة الصحيحة',
+            Obx(() => Text(
+              controller.selectedLanguage.value == 'arabic'
+                  ? 'اختر الإجابة الصحيحة'
+                  : 'Choose the correct answer',
               style: TextStyle(
                 fontSize: isSmallScreen ? 12.sp : 13.sp,
                 color: const Color(0xFF37817D),
                 fontStyle: FontStyle.italic,
               ),
-            ),
+            )),
           ],
         ],
       ),

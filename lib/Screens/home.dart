@@ -1,45 +1,117 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:slp/controller/auth_controller.dart';
 import 'package:slp/controller/home_controller.dart';
+
 
 class HomeScreen extends StatelessWidget {
   HomeScreen({super.key});
 
   final HomeController controller = Get.put(HomeController());
+  final LanguageController languageController = Get.find<LanguageController>();
 
-  final List<Map<String, dynamic>> menuItems = [
-    {'icon': Icons.fitness_center, 'label': 'تمارين منزلية', 'route': '/exercises'},
-    {'icon': Icons.book, 'label': 'تعريفات ', 'route': '/definitions'},
-    {'icon': Icons.family_restroom, 'label': 'نصائح للأهل', 'route': '/tips'},
-    {'icon': Icons.question_answer, 'label': 'أسئلة وأجوبة ', 'route': '/questions'},
-    {'icon': Icons.picture_as_pdf, 'label': 'مواد  مجانية PDF', 'route': '/free_materials'},
-    {'icon': Icons.quiz, 'label': 'اختبار ', 'route': '/quiz'},
-    {'icon': Icons.info, 'label': 'نبذة عن التطبيق ', 'route': '/about'},
-    {'icon': Icons.question_answer, 'label': 'أسئلة عن التطبيق', 'route': '/faq'},
+  String tr(String key) {
+    return languageController.getMainAppTranslation(key);
+  }
+
+  List<Map<String, dynamic>> get menuItems => [
+    {'icon': Icons.fitness_center, 'labelKey': 'home_exercises', 'route': '/exercises'},
+    {'icon': Icons.book, 'labelKey': 'definitions', 'route': '/definitions'},
+    {'icon': Icons.family_restroom, 'labelKey': 'parent_tips', 'route': '/tips'},
+    {'icon': Icons.question_answer, 'labelKey': 'questions_answers', 'route': '/questions'},
+    {'icon': Icons.picture_as_pdf, 'labelKey': 'free_pdf_materials', 'route': '/free_materials'},
+    {'icon': Icons.quiz, 'labelKey': 'quiz', 'route': '/quiz'},
+    {'icon': Icons.info, 'labelKey': 'about_app', 'route': '/about'},
+    {'icon': Icons.question_answer, 'labelKey': 'app_questions', 'route': '/faq'},
   ];
+
+  void _showLanguageDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15.r),
+          ),
+          title: Text(
+            'Select Language',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFF082726),
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildLanguageOption(context, 'English', 'en'),
+              SizedBox(height: 10.h),
+              _buildLanguageOption(context, 'العربية', 'ar'),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildLanguageOption(BuildContext context, String label, String langCode) {
+    return Obx(() {
+      final isSelected = languageController.mainAppLanguage.value == langCode;
+      return GestureDetector(
+        onTap: () {
+          languageController.changeMainAppLanguage(langCode);
+          Navigator.of(context).pop();
+        },
+        child: Container(
+          width: double.infinity,
+          padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 20.w),
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0xFF5D9C99) : Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(10.r),
+            border: Border.all(
+              color: isSelected ? const Color(0xFF5D9C99) : Colors.grey.shade300,
+              width: 1.5.w,
+            ),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w600,
+              color: isSelected ? Colors.white : const Color(0xFF082726),
+            ),
+          ),
+        ),
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Initialize ScreenUtil for responsiveness
     ScreenUtil.init(
       context,
-      designSize: const Size(360, 800), // Standard mobile design size
+      designSize: const Size(360, 800),
     );
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFEFEFE), // White background
+      backgroundColor: const Color(0xFFFEFEFE),
       appBar: AppBar(
-        title: Text(
-          'مرحباً بك',
-          style: TextStyle(
-            fontSize: 20.sp,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
+        title: Obx(() {
+          final _ = languageController.mainAppLanguage.value;
+          return Text(
+            tr('welcome'),
+            style: TextStyle(
+              fontSize: 20.sp,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          );
+        }),
         centerTitle: true,
-        backgroundColor: const Color(0xFF5D9C99), // Teal Green
+        backgroundColor: const Color(0xFF5D9C99),
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.only(
@@ -47,21 +119,33 @@ class HomeScreen extends StatelessWidget {
             bottomRight: Radius.circular(20.r),
           ),
         ),
+        actions: [
+          IconButton(
+            onPressed: () => _showLanguageDialog(context),
+            icon: Icon(
+              Icons.language,
+              color: Colors.white,
+              size: 26.sp,
+            ),
+            tooltip: 'Change Language',
+          ),
+          SizedBox(width: 8.w),
+        ],
       ),
       body: SingleChildScrollView(
-        child: Column(
-          children: [
-            SizedBox(height: 20.h),
-
-            // 🖼️ Image Slider with decorative elements
-            _buildImageSlider(),
-            SizedBox(height: 30.h),
-
-            // 🧱 Grid Menu
-            _buildGridMenu(),
-            SizedBox(height: 20.h),
-          ],
-        ),
+        child: Obx(() {
+          final _ = languageController.mainAppLanguage.value;
+          
+          return Column(
+            children: [
+              SizedBox(height: 20.h),
+              _buildImageSlider(),
+              SizedBox(height: 30.h),
+              _buildGridMenu(),
+              SizedBox(height: 20.h),
+            ],
+          );
+        }),
       ),
     );
   }
@@ -69,7 +153,6 @@ class HomeScreen extends StatelessWidget {
   Widget _buildImageSlider() {
     return Stack(
       children: [
-        // Main Image Slider
         Obx(() => Container(
               height: 180.h,
               margin: EdgeInsets.symmetric(horizontal: 20.w),
@@ -88,13 +171,11 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ],
                 border: Border.all(
-                  color: const Color(0xFF082726), // Dark Border
+                  color: const Color(0xFF082726),
                   width: 2.w,
                 ),
               ),
             )),
-        
-        // Decorative faces
         Positioned(
           top: 10.h,
           left: 30.w,
@@ -102,10 +183,10 @@ class HomeScreen extends StatelessWidget {
             width: 50.w,
             height: 50.h,
             decoration: BoxDecoration(
-              color: const Color(0xFFF8B134), // Mustard Yellow
+              color: const Color(0xFFF8B134),
               borderRadius: BorderRadius.circular(25.r),
               border: Border.all(
-                color: const Color(0xFF082726), // Dark Border
+                color: const Color(0xFF082726),
                 width: 2.w,
               ),
             ),
@@ -116,7 +197,6 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
         ),
-        
         Positioned(
           bottom: 10.h,
           right: 30.w,
@@ -124,10 +204,10 @@ class HomeScreen extends StatelessWidget {
             width: 40.w,
             height: 40.h,
             decoration: BoxDecoration(
-              color: const Color(0xFF5D9C99), // Teal Green
+              color: const Color(0xFF5D9C99),
               borderRadius: BorderRadius.circular(20.r),
               border: Border.all(
-                color: const Color(0xFF082726), // Dark Border
+                color: const Color(0xFF082726),
                 width: 2.w,
               ),
             ),
@@ -153,7 +233,7 @@ class HomeScreen extends StatelessWidget {
           crossAxisCount: 2,
           mainAxisSpacing: 15.h,
           crossAxisSpacing: 15.w,
-          childAspectRatio: 1.1, // Slightly adjusted for better text display
+          childAspectRatio: 1.1,
         ),
         itemBuilder: (context, index) {
           final item = menuItems[index];
@@ -165,9 +245,9 @@ class HomeScreen extends StatelessWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                  const Color(0xFF5D9C99).withOpacity(0.1), // Teal Green light
-                  const Color(0xFFF8B134).withOpacity(0.05), // Mustard Yellow light
-                ],
+                    const Color(0xFF5D9C99).withOpacity(0.1),
+                    const Color(0xFFF8B134).withOpacity(0.05),
+                  ],
                 ),
                 borderRadius: BorderRadius.circular(20.r),
                 boxShadow: [
@@ -178,7 +258,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ],
                 border: Border.all(
-                  color: const Color(0xFF5D9C99).withOpacity(0.3), // Teal Green border
+                  color: const Color(0xFF5D9C99).withOpacity(0.3),
                   width: 1.5.w,
                 ),
               ),
@@ -189,10 +269,10 @@ class HomeScreen extends StatelessWidget {
                     width: 60.w,
                     height: 60.h,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF5D9C99), // Teal Green
+                      color: const Color(0xFF5D9C99),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: const Color(0xFF082726), // Dark Border
+                        color: const Color(0xFF082726),
                         width: 2.w,
                       ),
                     ),
@@ -206,12 +286,12 @@ class HomeScreen extends StatelessWidget {
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 8.w),
                     child: Text(
-                      item['label'],
+                      tr(item['labelKey']),
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF082726), // Dark Border
+                        color: const Color(0xFF082726),
                         height: 1.3,
                       ),
                     ),
