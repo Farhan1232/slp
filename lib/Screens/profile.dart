@@ -220,24 +220,35 @@ class ProfileScreen extends StatelessWidget {
               Get.toNamed('/privacy');
             },
           ),
-          Divider(height: 1.h, color: Colors.grey.shade200),
-          ProfileMenuItem(
-            icon: Icons.share,
-            title: tr('share_app'),
-            iconColor: const Color(0xFF5D9C99),
-            onTap: () {
-              profileController.shareApp(); // Call shareApp method
-            },
-          ),
-          Divider(height: 1.h, color: Colors.grey.shade200),
-          ProfileMenuItem(
-            icon: Icons.star_rate,
-            title: tr('rating_and_feedback'),
-            iconColor: const Color(0xFF5D9C99),
-            onTap: () {
-              profileController.openRating(); // Call openRating method
-            },
-          ),
+// Profile Menu Items UI Code
+// Add this to your profile screen
+
+Divider(height: 1.h, color: Colors.grey.shade200),
+
+// Share App Button
+ProfileMenuItem(
+  icon: Icons.share,
+  title: tr('share_app'),
+  iconColor: const Color(0xFF5D9C99),
+  onTap: () {
+    // Share app via WhatsApp, SMS, etc.
+    profileController.shareApp();
+  },
+),
+
+Divider(height: 1.h, color: Colors.grey.shade200),
+
+// Rating & Feedback Button
+ProfileMenuItem(
+  icon: Icons.star_rate,
+  title: tr('rating_and_feedback'),
+  iconColor: const Color(0xFF5D9C99),
+  onTap: () {
+    // Open Play Store or App Store directly
+    profileController.openRating();
+  },
+),
+
           Divider(height: 1.h, color: Colors.grey.shade200),
           ProfileMenuItem(
             icon: Icons.info,

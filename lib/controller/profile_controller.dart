@@ -7,7 +7,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:slp/Model/auth_model.dart';
 import 'package:slp/constant/App_constant.dart';
-import 'package:slp/controller/auth_controller.dart'; 
+import 'package:slp/controller/auth_controller.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ProfileController extends GetxController {
@@ -116,7 +116,7 @@ class ProfileController extends GetxController {
     }
   }
 
-  // Share app with platform-specific links
+  // Share app with platform-specific links (WhatsApp, SMS, etc.)
   void shareApp() {
     try {
       Share.share(
@@ -135,153 +135,41 @@ class ProfileController extends GetxController {
     }
   }
 
-  // Open custom rating & feedback bottom sheet
-  void openRating() {
-    final RxInt selectedStars = 0.obs;
-    final TextEditingController feedbackController = TextEditingController();
+  // Open rating directly in Play Store or App Store
+  Future<void> openRating() async {
+    try {
+      String storeUrl;
+      
+      if (Platform.isAndroid) {
+        storeUrl = AppConstants.playStoreFeedbackUrl;
+      } else if (Platform.isIOS) {
+        storeUrl = AppConstants.appStoreFeedbackUrl;
+      } else {
+        storeUrl = AppConstants.playStoreFeedbackUrl;
+      }
 
-    Get.bottomSheet(
-      Container(
-        padding: const EdgeInsets.all(20),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Rate Our App',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 15),
-            
-            // Star Rating Row
-            Obx(() => Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(5, (index) {
-                    return IconButton(
-                      icon: Icon(
-                        index < selectedStars.value
-                            ? Icons.star
-                            : Icons.star_border,
-                        color: Colors.amber,
-                        size: 32,
-                      ),
-                      onPressed: () => selectedStars.value = index + 1,
-                    );
-                  }),
-                )),
-                
-            const SizedBox(height: 15),
-            
-            // Comment Box
-            TextField(
-              controller: feedbackController,
-              maxLines: 3,
-              decoration: InputDecoration(
-                hintText: 'Write your feedback (optional)...',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              ),
-            ),
-            
-            const SizedBox(height: 20),
-            
-            // Submit Button
-            GestureDetector(
-              onTap: () async {
-                if (selectedStars.value == 0) {
-                  Get.snackbar(
-                    'Rating Required', 
-                    'Please select at least one star',
-                    backgroundColor: Colors.orange,
-                    colorText: Colors.white,
-                    snackPosition: SnackPosition.BOTTOM,
-                  );
-                  return;
-                }
-
-                try {
-                  // Save feedback to Firestore
-                  await _firestore.collection('app_feedback').add({
-                    'userId': currentUserId,
-                    'stars': selectedStars.value,
-                    'comment': feedbackController.text.trim(),
-                    'timestamp': FieldValue.serverTimestamp(),
-                  });
-
-                  Get.back(); // Close bottom sheet
-
-                  Get.snackbar(
-                    'Thank You!',
-                    'Your feedback has been submitted successfully.',
-                    backgroundColor: Colors.green,
-                    colorText: Colors.white,
-                    snackPosition: SnackPosition.BOTTOM,
-                  );
-
-                  // Redirect to appropriate store based on platform
-                  String storeUrl;
-                  if (Platform.isAndroid) {
-                    storeUrl = AppConstants.playStoreFeedbackUrl;
-                  } else if (Platform.isIOS) {
-                    storeUrl = AppConstants.appStoreFeedbackUrl;
-                  } else {
-                    storeUrl = AppConstants.playStoreFeedbackUrl;
-                  }
-
-                  final Uri url = Uri.parse(storeUrl);
-                  if (await canLaunchUrl(url)) {
-                    await launchUrl(url, mode: LaunchMode.externalApplication);
-                  }
-                } catch (e) {
-                  print('Error submitting feedback: $e');
-                  Get.snackbar(
-                    'Error',
-                    'Failed to submit feedback. Please try again.',
-                    backgroundColor: Colors.red,
-                    colorText: Colors.white,
-                    snackPosition: SnackPosition.BOTTOM,
-                  );
-                }
-              },
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF5D9C99),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF5D9C99).withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: const Center(
-                  child: Text(
-                    'Submit Feedback',
-                    style: TextStyle(
-                      color: Colors.white, 
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-          ],
-        ),
-      ),
-      isScrollControlled: true,
-      isDismissible: true,
-      enableDrag: true,
-    );
+      final Uri url = Uri.parse(storeUrl);
+      
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        Get.snackbar(
+          'Error',
+          'Unable to open store. Please try again.',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    } catch (e) {
+      print('Error opening store: $e');
+      Get.snackbar(
+        'Error',
+        'Unable to open store. Please try again.',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
   }
 }
