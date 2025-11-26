@@ -21,14 +21,17 @@ class ExpressiveLanguageScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFFEFEFE),
       appBar: AppBar(
-        title: Text(
-          'expressive_language'.tr,
+        // FIXED: Wrap title in Obx to update when language changes
+        title: Obx(() => Text(
+          controller.currentLanguage.value == 'arabic' 
+              ? 'اللغة التعبيرية' 
+              : 'Expressive Language',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 20.sp,
             color: Colors.white,
           ),
-        ),
+        )),
         centerTitle: true,
         backgroundColor: const Color(0xFF5D9C99),
         elevation: 0,
@@ -78,7 +81,6 @@ class ExpressiveLanguageScreen extends StatelessWidget {
               children: [
                 _buildLanguageToggle(controller),
                 SizedBox(height: 20.h),
-                // CHANGED: Wrapped in Obx() to rebuild when headerData changes
                 Obx(() => _buildHeaderSection(controller, isRtl)),
                 SizedBox(height: 20.h),
                 _buildExercisesList(controller, isRtl),
@@ -197,7 +199,6 @@ class ExpressiveLanguageScreen extends StatelessWidget {
               crossAxisAlignment: crossAxisAlignment,
               children: [
                 Text(
-                  // CHANGED: Access via .value since headerData is now observable
                   controller.headerData.value['title'] ?? defaultTitle,
                   textAlign: TextAlign.start,
                   style: TextStyle(
@@ -208,7 +209,6 @@ class ExpressiveLanguageScreen extends StatelessWidget {
                 ),
                 SizedBox(height: 6.h),
                 Text(
-                  // CHANGED: Access via .value since headerData is now observable
                   controller.headerData.value['description'] ?? defaultDescription,
                   textAlign: TextAlign.start,
                   style: TextStyle(
@@ -229,12 +229,15 @@ class ExpressiveLanguageScreen extends StatelessWidget {
     final crossAxisAlignment = isRtl ? CrossAxisAlignment.end : CrossAxisAlignment.start;
     
     return Expanded(
-      child: ListView.builder(
+      child: Obx(() => ListView.builder(
         physics: const BouncingScrollPhysics(),
         itemCount: controller.videos.length,
         itemBuilder: (context, index) {
           final video = controller.videos[index];
-          final exerciseNumberText = isRtl ? 'تمرين ${index + 1}' : 'Exercise ${index + 1}';
+          // FIXED: Update exercise text based on controller's current language
+          final exerciseNumberText = controller.currentLanguage.value == 'arabic' 
+              ? 'تمرين ${index + 1}' 
+              : 'Exercise ${index + 1}';
 
           return Container(
             margin: EdgeInsets.only(bottom: 12.h),
@@ -333,7 +336,7 @@ class ExpressiveLanguageScreen extends StatelessWidget {
             ),
           );
         },
-      ),
+      )),
     );
   }
 }

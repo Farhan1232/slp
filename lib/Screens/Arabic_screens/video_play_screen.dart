@@ -15,6 +15,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   late Future<void> _initializeVideoPlayerFuture;
   bool _isPlaying = false;
   bool _showControls = true;
+  String _language = 'english'; // ADDED: Store language
 
   @override
   void initState() {
@@ -22,6 +23,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     
     final args = Get.arguments;
     final videoUrl = args['videoUrl'] ?? '';
+    _language = args['language'] ?? 'english'; // ADDED: Get language from arguments
     
     _controller = VideoPlayerController.networkUrl(Uri.parse(videoUrl));
     _initializeVideoPlayerFuture = _controller.initialize().then((_) {
@@ -68,7 +70,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     );
 
     final args = Get.arguments;
-    final title = args['title'] ?? 'تشغيل الفيديو';
+    final title = args['title'] ?? (_language == 'arabic' ? 'تشغيل الفيديو' : 'Video Player');
+
+    // ADDED: Dynamic text based on language
+    final loadingText = _language == 'arabic' ? 'جاري تحميل الفيديو...' : 'Loading video...';
+    final errorText = _language == 'arabic' ? 'حدث خطأ في تحميل الفيديو' : 'Error loading video';
+    final backButtonText = _language == 'arabic' ? 'رجوع' : 'Back';
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -245,6 +252,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
               ),
             );
           } else if (snapshot.hasError) {
+            // CHANGED: Use dynamic error text based on language
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -252,7 +260,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                   Icon(Icons.error_outline, size: 60.sp, color: Colors.red),
                   SizedBox(height: 16.h),
                   Text(
-                    'حدث خطأ في تحميل الفيديو',
+                    errorText,
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16.sp,
@@ -265,12 +273,13 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                       foregroundColor: Colors.white,
                     ),
                     onPressed: () => Get.back(),
-                    child: const Text('رجوع'),
+                    child: Text(backButtonText),
                   ),
                 ],
               ),
             );
           } else {
+            // CHANGED: Use dynamic loading text based on language
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -281,7 +290,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                   ),
                   SizedBox(height: 20.h),
                   Text(
-                    'جاري تحميل الفيديو...',
+                    loadingText,
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16.sp,

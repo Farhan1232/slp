@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 
 class HomeExercisesController extends GetxController {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -19,6 +20,14 @@ class HomeExercisesController extends GetxController {
 
   void toggleLanguage(String language) {
     currentLanguage.value = language;
+    
+    // Update GetX locale based on language selection
+    if (language == 'arabic') {
+      Get.updateLocale(const Locale('ar', 'SA')); // Arabic locale
+    } else {
+      Get.updateLocale(const Locale('en', 'US')); // English locale
+    }
+    
     fetchData();
   }
 

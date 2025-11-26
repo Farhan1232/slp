@@ -8,7 +8,6 @@ class ExpressiveLanguageController extends GetxController {
   var isLoading = true.obs;
   var errorMessage = ''.obs;
   
-  // CHANGED: Make headerData observable so UI updates when it changes
   var headerData = <String, String>{}.obs;
   var videos = <Map<String, dynamic>>[].obs;
 
@@ -16,11 +15,9 @@ class ExpressiveLanguageController extends GetxController {
   void onInit() {
     super.onInit();
     
-    // Get arguments passed from HomeExercisesScreen
     final args = Get.arguments;
     if (args != null) {
       currentLanguage.value = args['language'] ?? 'english';
-      // Set initial header data from arguments
       headerData.value = Map<String, String>.from(args['headerData'] ?? {});
     }
     
@@ -29,12 +26,10 @@ class ExpressiveLanguageController extends GetxController {
 
   void toggleLanguage(String language) {
     currentLanguage.value = language;
-    // Fetch both header data and videos when language changes
     fetchHeaderData();
     fetchVideos();
   }
 
-  // NEW: Fetch header data from Firestore (same structure as HomeExercisesController)
   Future<void> fetchHeaderData() async {
     try {
       final docRef = _firestore
@@ -46,13 +41,12 @@ class ExpressiveLanguageController extends GetxController {
       final docSnapshot = await docRef.get();
 
       if (!docSnapshot.exists) {
-        return; // Keep existing header data if fetch fails
+        return;
       }
 
       final data = docSnapshot.data();
       final items = data?['items'] as List<dynamic>? ?? [];
 
-      // Index 2 is Expressive Language (based on HomeExercisesController navigation)
       if (items.length > 2) {
         final expressiveItem = items[2] as Map<String, dynamic>;
         headerData.value = {
@@ -61,7 +55,6 @@ class ExpressiveLanguageController extends GetxController {
         };
       }
     } catch (e) {
-      // Keep existing header data if fetch fails
       print('Error fetching header data: $e');
     }
   }
@@ -114,6 +107,7 @@ class ExpressiveLanguageController extends GetxController {
       'videoUrl': video['videoUrl'],
       'title': video['title'],
       'videoId': video['id'],
+      'language': currentLanguage.value, // ADDED: Pass current language
     });
   }
 }

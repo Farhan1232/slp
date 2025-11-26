@@ -14,6 +14,8 @@ class LocalizationService extends Translations {
   @override
   Map<String, Map<String, String>> get keys => {
         'en_US': {
+
+        
           // --- General App Keys (Navigation, Static Content) ---
           'home': 'Home',
           'definitions': 'Definitions',

@@ -489,7 +489,7 @@ class LanguageController extends GetxController {
         'app_questions': 'App Questions',
         'home_tab': 'Home',
         'result_tab': 'Results',
-        'setting': 'Setting',
+        'setting': 'Settings',
         'profile_title': 'Profile',
         'default_user': 'User',
         'terms_and_conditions': 'Terms and Conditions',
